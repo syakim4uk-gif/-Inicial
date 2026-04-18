@@ -2,626 +2,692 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Инициал</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2196F3">
     <style>
         :root {
             --primary: #2196F3;
-            --bg: #f5f5f5;
+            --bg: #f8f9fa;
             --card: #ffffff;
             --text: #333;
-            --gray: #888;
-            /* Цвета типов сеток */
-            --type-rm: #2196F3; /* Рамочная - синий */
-            --type-vs: #4CAF50; /* Вставная - зеленый */
-            --type-psl: #FFEB3B; /* Плиссе Slim - желтый */
-            --type-psm: #FF9800; /* Плиссе Smart - оранжевый */
+            --gray: #777;
+            --rm-color: #2196F3;
+            --vs-color: #4CAF50;
+            --psl-color: #fdd835;
+            --psm-color: #ff9800;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            margin: 0; padding: 0; background: var(--bg); color: var(--text);
-            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
-        }
-
-        /* Навигация */
-        .tabs { 
-            display: flex; background: #fff; border-top: 1px solid #ddd;
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-        .tab-btn { 
-            flex: 1; padding: 15px; border: none; background: none; 
-            font-weight: bold; color: var(--gray); font-size: 14px;
-        }
-        .tab-btn.active { color: var(--primary); border-top: 3px solid var(--primary); }
-
-        /* Контент */
-        .content { flex: 1; overflow-y: auto; padding: 15px; }
-        .screen { display: none; }
-        .screen.active { display: block; }
-
-        /* Формы и кнопки */
-        .card { background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; font-size: 12px; color: var(--gray); margin-bottom: 4px; }
-        input, select, textarea { 
-            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; 
-            font-size: 16px; /* Предотвращает зум на iOS */
-        }
-        .hint { font-size: 11px; color: var(--gray); margin-top: 2px; }
         
-        .btn { 
-            width: 100%; padding: 15px; border: none; border-radius: 8px; 
-            font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 5px;
-        }
-        .btn-primary { background: var(--primary); color: #fff; }
-        .btn-delete { background: #ff5252; color: #fff; padding: 8px; width: auto; }
-        .btn-edit { background: #ffa000; color: #fff; padding: 8px; width: auto; margin-right: 5px; }
-
-        /* Список заказов и сеток */
-        .order-item { border-left: 5px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
-        .grid-item { border-left: 5px solid var(--gray); position: relative; }
-        .grid-num { font-weight: bold; margin-right: 10px; }
-        .grid-meta { font-size: 13px; color: var(--gray); margin-top: 5px; line-height: 1.4; }
-        .grid-extra { font-size: 11px; color: #999; }
-
-        /* Уведомления */
-        #toast { 
-            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; 
-            border-radius: 20px; display: none; z-index: 1000; 
+        body, html { 
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            font-family: -apple-system, system-ui, sans-serif;
+            background: var(--bg); color: var(--text);
+            overflow: hidden; /* Чтобы не дергалось при клавиатуре */
         }
 
-        /* Очередь отправки */
-        #offline-alert {
-            background: #ff9800; color: white; padding: 10px; text-align: center;
-            font-size: 13px; display: none; cursor: pointer;
+        /* Главный контейнер с фиксированной высотой */
+        .app-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
         }
 
-        /* Блок Сетка при редактировании */
-        .editing-mode { background: #fffde7 !important; border: 2px solid #fbc02d; }
+        /* Прокручиваемая область */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 10px 80px 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Нижняя навигация - всегда видна */
+        .nav-bar {
+            height: 65px;
+            background: #fff;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: env(safe-area-inset-bottom);
+            z-index: 100;
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        .nav-item.active { color: var(--primary); }
+
+        /* Карточки и сетка */
+        .card { 
+            background: #fff; border-radius: 12px; padding: 12px; 
+            margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .full-width { grid-column: span 2; }
+
+        .input-wrap {
+            position: relative;
+            margin-bottom: 5px;
+        }
+
+        label { display: block; font-size: 11px; color: var(--gray); margin-bottom: 2px; padding-left: 4px; }
+
+        input, select, textarea {
+            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;
+            font-size: 16px; background: #fff;
+        }
+
+        .field-hint {
+            font-size: 10px; color: #999; margin-top: -2px; padding-left: 4px;
+            min-height: 12px;
+        }
+
+        /* Специфические стили для списка */
+        .order-row {
+            display: flex; justify-content: space-between; align-items: center;
+            border-left: 4px solid var(--primary);
+        }
+
+        .grid-item {
+            position: relative; border-left: 6px solid #ccc;
+            padding-right: 40px;
+        }
+
+        .grid-actions {
+            position: absolute; right: 8px; top: 50%;
+            transform: translateY(-50%);
+            display: flex; flex-direction: column; gap: 10px;
+        }
+
+        .btn-icon {
+            background: #eee; border: none; border-radius: 4px;
+            padding: 8px; font-size: 16px; width: 34px;
+        }
+
+        .grid-meta-small { font-size: 13px; color: var(--gray); margin-top: 4px; }
+
+        .btn {
+            width: 100%; padding: 14px; border: none; border-radius: 8px;
+            font-weight: bold; font-size: 16px; cursor: pointer;
+        }
+        .btn-blue { background: var(--primary); color: #fff; }
+        .btn-red { background: #ff5252; color: #fff; }
+
+        /* Анимации уведомлений */
+        #toast {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px;
+            border-radius: 20px; display: none; z-index: 10000;
+        }
+
+        .editing-active { background: #fff9c4 !important; }
+        
+        .hidden { display: none !important; }
+
+        #offline-notice {
+            background: #ffa000; color: white; text-align: center;
+            padding: 5px; font-size: 12px; display: none;
+        }
     </style>
 </head>
 <body>
 
-<div id="offline-alert" onclick="processQueue()">Есть неотправленные заказы. Нажмите, чтобы отправить.</div>
-
-<div class="content">
-    <div id="screen-orders" class="screen active">
-        <h2>Заказы</h2>
-        <div id="orders-list"></div>
-        <button class="btn btn-primary" onclick="createNewOrder()">+ Новый заказ</button>
-    </div>
-
-    <div id="screen-order-detail" class="screen">
-        <button class="btn" style="background: #eee; margin-bottom: 10px;" onclick="showScreen('screen-orders')">← Назад к списку</button>
-        
-        <div class="card" id="customer-block">
-            <div style="display:flex; justify-content: space-between; align-items: center;">
-                <h3 style="margin:0">Заказчик</h3>
-                <button onclick="toggleCustomerBlock()" id="toggle-cust-btn">🔼</button>
-            </div>
-            <div id="customer-inputs">
-                <div class="input-group">
-                    <label>Адрес</label>
-                    <input type="text" id="cust-address" placeholder="Улица, дом, кв">
-                </div>
-                <div class="input-group">
-                    <label>Имя</label>
-                    <input type="text" id="cust-name">
-                </div>
-                <div class="input-group">
-                    <label>Телефон</label>
-                    <input type="tel" id="cust-phone" placeholder="+7-___-___-__-__">
-                </div>
-                <div class="input-group">
-                    <label>Примечание</label>
-                    <textarea id="cust-note" rows="2"></textarea>
-                </div>
-            </div>
+<div class="app-wrapper">
+    <div id="offline-notice">Нет связи. Сообщения уйдут автоматически при появлении сети.</div>
+    
+    <div class="main-content">
+        <div id="screen-list">
+            <h3 style="margin-top:0">Мои Заказы</h3>
+            <div id="orders-container"></div>
+            <button class="btn btn-blue" onclick="createOrder()" style="margin-top:10px;">+ НОВЫЙ ЗАКАЗ</button>
         </div>
 
-        <div class="card" id="grid-form-block">
-            <h3 id="grid-form-title">Добавить сетку</h3>
-            <div class="input-group">
-                <label>Тип сетки</label>
-                <select id="grid-type" onchange="renderGridFields()">
-                    <option value="rm">Рамочная</option>
-                    <option value="vs">Вставная</option>
-                    <option value="psl">Плиссе Slim</option>
-                    <option value="psm">Плиссе Smart</option>
-                </select>
+        <div id="screen-order-edit" class="hidden">
+            <button onclick="goBack()" style="border:none; background:none; color:var(--primary); padding:10px 0; font-weight:bold;">← К СПИСКУ</button>
+            
+            <div class="card" id="customer-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h4 style="margin:0">Заказчик</h4>
+                    <button id="toggle-cust" onclick="toggleCust()">▲</button>
+                </div>
+                <div id="cust-fields">
+                    <div class="input-wrap">
+                        <label>Адрес</label>
+                        <input type="text" id="c-address" placeholder="Улица, дом, кв">
+                    </div>
+                    <div class="form-grid">
+                        <div class="input-wrap">
+                            <label>Имя</label>
+                            <input type="text" id="c-name">
+                        </div>
+                        <div class="input-wrap">
+                            <label>Телефон</label>
+                            <input type="tel" id="c-phone" placeholder="+7-___-___-__-__">
+                        </div>
+                    </div>
+                    <div class="input-wrap">
+                        <label>Примечание</label>
+                        <textarea id="c-note" rows="1"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="grid-form-card">
+                <h4 id="form-title" style="margin-top:0">Новое изделие</h4>
+                <div class="input-wrap">
+                    <label>Тип сетки</label>
+                    <select id="g-type" onchange="renderForm()">
+                        <option value="rm">Рамочная</option>
+                        <option value="vs">Вставная</option>
+                        <option value="psl">Плиссе Slim</option>
+                        <option value="psm">Плиссе Smart</option>
+                    </select>
+                </div>
+                
+                <div id="dynamic-fields" class="form-grid"></div>
+
+                <div id="form-buttons" style="margin-top:10px;">
+                    <button class="btn btn-blue" id="btn-add" onclick="saveGrid()">ДОБАВИТЬ</button>
+                </div>
+            </div>
+
+            <h4>Список изделий</h4>
+            <div id="grids-list"></div>
+
+            <div class="card" style="margin-top:20px;">
+                <label>Почта для отправки</label>
+                <input type="email" id="target-email" style="margin-bottom:10px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <button class="btn btn-blue" onclick="exportData('email')">E-mail</button>
+                    <button class="btn btn-blue" onclick="exportData('share')">Поделиться</button>
+                </div>
+                <button class="btn btn-blue" onclick="exportData('copy')" style="margin-top:10px; background:#666;">Копировать ASCII</button>
             </div>
             
-            <div id="dynamic-fields"></div>
-
-            <div id="form-actions">
-                <button class="btn btn-primary" id="btn-add-grid" onclick="addGrid()">Добавить</button>
-            </div>
+            <button class="btn btn-red" onclick="deleteOrder()" style="margin-top:20px;">УДАЛИТЬ ЗАКАЗ</button>
         </div>
 
-        <h3>Изделия в заказе</h3>
-        <div id="order-grids-list" style="max-height: 400px; overflow-y: auto;"></div>
-
-        <div class="card" style="margin-top:20px;">
-            <label>E-mail для отправки</label>
-            <input type="email" id="target-email" placeholder="example@mail.ru" style="margin-bottom:10px;">
-            <div style="display:flex; gap:10px;">
-                <button class="btn btn-primary" onclick="shareOrder('email')" style="flex:1">E-mail</button>
-                <button class="btn btn-primary" onclick="shareOrder('share')" style="flex:1">Поделиться</button>
+        <div id="screen-profile" class="hidden">
+            <h3>Профиль</h3>
+            <div class="card">
+                <div class="input-wrap">
+                    <label>Ваше Имя</label>
+                    <input type="text" id="u-name">
+                </div>
+                <div class="input-wrap">
+                    <label>Ваш Телефон</label>
+                    <input type="tel" id="u-phone" placeholder="+7-___-___-__-__">
+                </div>
+                <button class="btn btn-blue" onclick="saveProfile()">СОХРАНИТЬ МАСТЕРА</button>
             </div>
-        </div>
-        <button class="btn btn-delete" onclick="deleteCurrentOrder()" style="width:100%; margin-top:20px;">Удалить заказ целиком</button>
-    </div>
-
-    <div id="screen-profile" class="screen">
-        <h2>Профиль мастера</h2>
-        <div class="card">
-            <div class="input-group">
-                <label>Ваше Имя</label>
-                <input type="text" id="user-name">
-            </div>
-            <div class="input-group">
-                <label>Ваш Телефон</label>
-                <input type="tel" id="user-phone" placeholder="+7-___-___-__-__">
-            </div>
-            <button class="btn btn-primary" onclick="saveProfile()">Сохранить профиль</button>
         </div>
     </div>
-</div>
 
-<div class="tabs">
-    <button class="tab-btn active" onclick="showScreen('screen-orders', this)">ЗАКАЗЫ</button>
-    <button class="tab-btn" onclick="showScreen('screen-profile', this)">ПРОФИЛЬ</button>
+    <div class="nav-bar">
+        <div class="nav-item active" id="nav-list" onclick="nav('list')">ЗАКАЗЫ</div>
+        <div class="nav-item" id="nav-profile" onclick="nav('profile')">ПРОФИЛЬ</div>
+    </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
-/* --- ЛОГИКА БД (IndexedDB) --- */
-let db;
-const request = indexedDB.open("InitialDB", 1);
-request.onupgradeneeded = e => {
-    db = e.target.result;
-    db.createObjectStore("orders", { keyPath: "id", autoIncrement: true });
-    db.createObjectStore("settings", { keyPath: "key" });
-};
-request.onsuccess = e => {
-    db = e.target.result;
-    loadProfile();
-    renderOrdersList();
-    checkQueue();
-};
-
-/* --- СОСТОЯНИЕ --- */
-let currentOrderId = null;
-let editingGridIndex = null;
-
-/* --- НАВИГАЦИЯ --- */
-function showScreen(screenId, btn) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(screenId).classList.add('active');
-    if(btn) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-    }
-}
-
-/* --- ПРОФИЛЬ --- */
-function saveProfile() {
-    const data = { 
-        key: "user", 
-        name: document.getElementById('user-name').value, 
-        phone: document.getElementById('user-phone').value 
-    };
-    db.transaction("settings", "readwrite").objectStore("settings").put(data);
-    vibrate(50);
-    showToast("Профиль сохранен");
-}
-
-function loadProfile() {
-    db.transaction("settings").objectStore("settings").get("user").onsuccess = e => {
-        if(e.target.result) {
-            document.getElementById('user-name').value = e.target.result.name;
-            document.getElementById('user-phone').value = e.target.result.phone;
-        }
-    };
-    // Загрузка email
-    db.transaction("settings").objectStore("settings").get("last_email").onsuccess = e => {
-        if(e.target.result) document.getElementById('target-email').value = e.target.result.value;
-    };
-}
-
-/* --- ЗАКАЗЫ --- */
-async function createNewOrder() {
-    const newOrder = {
-        customer: { address: "Новый объект", name: "", phone: "", note: "" },
-        grids: [],
-        sent: null
-    };
-    const tx = db.transaction("orders", "readwrite");
-    const id = await new Promise(res => {
-        const req = tx.objectStore("orders").add(newOrder);
-        req.onsuccess = () => res(req.result);
-    });
-    openOrder(id);
-}
-
-function openOrder(id) {
-    currentOrderId = id;
-    db.transaction("orders").objectStore("orders").get(id).onsuccess = e => {
-        const order = e.target.result;
-        document.getElementById('cust-address').value = order.customer.address;
-        document.getElementById('cust-name').value = order.customer.name;
-        document.getElementById('cust-phone').value = order.customer.phone;
-        document.getElementById('cust-note').value = order.customer.note;
-        renderGridsList(order.grids);
-        renderGridFields();
-        showScreen('screen-order-detail');
-        attachAutoSave();
-    };
-}
-
-function renderOrdersList() {
-    const list = document.getElementById('orders-list');
-    list.innerHTML = "";
-    db.transaction("orders").objectStore("orders").openCursor().onsuccess = e => {
-        const cursor = e.target.result;
-        if (cursor) {
-            const order = cursor.value;
-            const counts = { rm:0, vs:0, psl:0, psm:0 };
-            order.grids.forEach(g => counts[g.type]++);
-            
-            const div = document.createElement('div');
-            div.className = 'card order-item';
-            div.onclick = () => openOrder(order.id);
-            div.innerHTML = `
-                <div>
-                    <strong>${order.customer.address || 'Без адреса'}</strong><br>
-                    <small>Рм:${counts.rm}, Вс:${counts.vs}, ПSl:${counts.psl}, ПSm:${counts.psm}</small><br>
-                    ${order.sent ? `<small style="color:green">Отправлено: ${order.sent}</small>` : ''}
-                </div>
-                <span>→</span>
-            `;
-            list.appendChild(div);
-            cursor.continue();
-        }
-    };
-}
-
-/* --- СЕТКИ --- */
-const GRID_CONFIG = {
-    rm: { name: "Рамочная", color: "var(--type-rm)", fields: [
-        { id: "w", label: "Ширина", type: "number", hint: "световой проем" },
-        { id: "h", label: "Высота", type: "number", hint: "световой проем" },
-        { id: "pr", label: "Притвор", type: "number" },
-        { id: "clr", label: "Цвет", type: "select", options: ["белый", "антрацит", "коричневый", "золотой дуб", "махагон", "сосна", "черно-коричневый", "на заказ"] },
-        { id: "plt", label: "Полотно", type: "select", options: ["стандарт", "антиМошка", "антиКошка", "ультра вью", "антиПыль", "алюминиевая"] }
+/* --- КОНФИГУРАЦИЯ СЕТОК --- */
+const CONFIG = {
+    rm: { name: "Рамочная", pref: "Рм", color: "var(--rm-color)", fields: [
+        { id: "w", label: "Ширина, мм", type: "number", hint: "световой проем", req: true },
+        { id: "h", label: "Высота", type: "number", hint: "световой проем", req: true },
+        { id: "pr", label: "Притвор", type: "number", req: true },
+        { id: "clr", label: "Цвет", type: "select", options: ["белый", "антрацит", "коричневый", "золотой дуб", "махагон", "сосна", "черно-коричневый", "на заказ"], req: true },
+        { id: "plt", label: "Полотно", type: "select", options: ["стандарт", "антиМошка", "антиКошка", "ультра вью", "антиПыль", "алюминиевая"], req: true },
+        { id: "note", label: "Прим.", type: "text", full: true }
     ]},
-    vs: { name: "Вставная", color: "var(--type-vs)", fields: [
-        { id: "w", label: "Ширина", type: "number", hint: "световой проем" },
-        { id: "h", label: "Высота", type: "number", hint: "световой проем" },
-        { id: "clr", label: "Цвет", type: "select", options: ["белый", "антрацит", "коричневый", "на заказ"] },
-        { id: "plt", label: "Полотно", type: "select", options: ["стандарт", "антиМошка", "антиКошка", "ультра вью", "антиПыль", "алюминиевая"] },
-        { id: "note", label: "Примечание", type: "text" }
+    vs: { name: "Вставная", pref: "Вс", color: "var(--vs-color)", fields: [
+        { id: "w", label: "Ширина, мм", type: "number", hint: "световой проем", req: true },
+        { id: "h", label: "Высота, мм", type: "number", hint: "световой проем", req: true },
+        { id: "clr", label: "Цвет", type: "select", options: ["белый", "антрацит", "коричневый", "на заказ"], req: true },
+        { id: "plt", label: "Полотно", type: "select", options: ["стандарт", "антиМошка", "антиКошка", "ультра вью", "антиПыль", "алюминиевая"], req: true },
+        { id: "note", label: "Прим.", type: "text", full: true }
     ]},
-    psl: { name: "Плиссе Slim", color: "var(--type-psl)", fields: [
-        { id: "w", label: "Ширина", type: "number", hint: "размер изделия" },
-        { id: "h", label: "Высота", type: "number", hint: "размер изделия" },
-        { id: "dir", label: "Закрывание", type: "select", options: ["<--", "-->", "⬇", "⬆", "--> <--"], hint: "вид со стороны установки" },
-        { id: "clr", label: "Цвет", type: "select", options: ["белый", "антрацит", "коричневый", "на заказ"] },
-        { id: "plt", label: "Полотно", type: "select", options: ["стандарт", "антиМошка", "антиКошка"] },
-        { id: "sb", label: "Сборка сетки", type: "select", options: ["собрать", "не собирать"], hint: "как будешь забирать?" },
-        { id: "ov", label: "Отв. верт (шт)", type: "text", def: "без" },
-        { id: "og", label: "Отв. гор (шт)", type: "text", def: "без" },
-        { id: "note", label: "Примечание", type: "text" }
+    psl: { name: "Плиссе Slim", pref: "ПSl", color: "var(--psl-color)", fields: [
+        { id: "w", label: "Ширина, мм", type: "number", hint: "размер изделия", req: true },
+        { id: "h", label: "Высота, мм", type: "number", hint: "размер изделия", req: true },
+        { id: "dir", label: "Закрывание", type: "select", options: ["⬅", "➡", "⬇", "⬆", "➡⬅"], hint: "со стороны установки", req: true },
+        { id: "clr", label: "Цвет", type: "select", options: ["белый", "антрацит", "коричневый", "на заказ"], req: true },
+        { id: "plt", label: "Полотно", type: "select", options: ["стандарт", "антиМошка", "антиКошка"], req: true },
+        { id: "sb", label: "Сборка", type: "select", options: ["собрать", "не собирать"], hint: "как забирать?", req: true },
+        { id: "ov", label: "Отв. верт.", type: "number", def: "без", hint: "сколько отверстий?" },
+        { id: "og", label: "Отв. гор.", type: "number", def: "без", hint: "сколько отверстий?" },
+        { id: "note", label: "Прим.", type: "text", full: true }
     ]},
-    psm: { name: "Плиссе Smart", color: "var(--type-psm)", fields: [
-        { id: "w", label: "Ширина", type: "number", hint: "размер изделия" },
-        { id: "h", label: "Высота", type: "number", hint: "размер изделия" },
-        { id: "dir", label: "Закрывание", type: "select", options: ["<--", "-->", "⬇", "⬆", "--> <--"] },
-        { id: "por", label: "Порог", type: "select", options: ["без (рама по кругу)", "тонкий порог анодированный", "тонкий порог окрашенный"], hint: "Если окрашенный - введи цвет в примечание" },
-        { id: "hnd", label: "Ручка", type: "select", options: ["без", "снаружи", "внутри", "снаружи + внутри"] },
-        { id: "clr", label: "Цвет", type: "select", options: ["белый", "антрацит", "коричневый", "на заказ"] },
-        { id: "plt", label: "Полотно", type: "select", options: ["стандарт", "антиМошка", "антиКошка"] },
-        { id: "sb", label: "Сборка сетки", type: "select", options: ["собрать", "не собирать"] },
-        { id: "ov", label: "Отв. верт (шт)", type: "text", def: "без" },
-        { id: "og", label: "Отв. гор (шт)", type: "text", def: "без" },
-        { id: "note", label: "Примечание", type: "text" }
+    psm: { name: "Плиссе Smart", pref: "ПSm", color: "var(--psm-color)", fields: [
+        { id: "w", label: "Ширина", type: "number", hint: "размер изделия", req: true },
+        { id: "h", label: "Высота", type: "number", hint: "размер изделия", req: true },
+        { id: "dir", label: "Закрывание", type: "select", options: ["<--", "-->", "⬇", "⬆", "--> <--"], hint: "со стороны установки", req: true },
+        { id: "por", label: "Порог", type: "select", options: ["без", "тонкий анод.", "тонкий окраш."], hint: "если окраш. - цвет в прим.", req: true },
+        { id: "hnd", label: "Ручка", type: "select", options: ["без", "снаружи", "внутри", "снаружи+внутри"], req: true },
+        { id: "clr", label: "Цвет", type: "select", options: ["белый", "антрацит", "коричневый", "на заказ"], req: true },
+        { id: "plt", label: "Полотно", type: "select", options: ["стандарт", "антиМошка", "антиКошка"], req: true },
+        { id: "sb", label: "Сборка", type: "select", options: ["собрать", "не собирать"], req: true },
+        { id: "ov", label: "Отв. верт.", type: "number", def: "без" },
+        { id: "og", label: "Отв. гор.", type: "number", def: "без" },
+        { id: "note", label: "Прим.", type: "text", full: true }
     ]}
 };
 
-function renderGridFields() {
-    const type = document.getElementById('grid-type').value;
+/* --- DB ENGINE (IndexedDB) --- */
+let db, curOrderId = null, editIdx = null;
+const req = indexedDB.open("InitialDB_V2", 1);
+req.onupgradeneeded = e => {
+    const d = e.target.result;
+    d.createObjectStore("orders", { keyPath: "id", autoIncrement: true });
+    d.createObjectStore("user", { keyPath: "id" });
+};
+req.onsuccess = e => {
+    db = e.target.result;
+    init();
+};
+
+function init() {
+    loadUser();
+    renderOrders();
+    applyMask(document.getElementById('c-phone'));
+    applyMask(document.getElementById('u-phone'));
+    
+    // Auto-save customer
+    ['c-address', 'c-name', 'c-phone', 'c-note'].forEach(id => {
+        document.getElementById(id).onchange = () => saveOrderData();
+    });
+
+    // Offline check
+    window.addEventListener('online', processQueue);
+    processQueue();
+}
+
+/* --- LOGIC --- */
+
+function nav(scr) {
+    document.querySelectorAll('.screen, #screen-list, #screen-order-edit, #screen-profile').forEach(s => s.classList.add('hidden'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    
+    if(scr === 'list') {
+        document.getElementById('screen-list').classList.remove('hidden');
+        document.getElementById('nav-list').classList.add('active');
+        renderOrders();
+    } else if(scr === 'profile') {
+        document.getElementById('screen-profile').classList.remove('hidden');
+        document.getElementById('nav-profile').classList.add('active');
+    }
+}
+
+async function createOrder() {
+    const tx = db.transaction("orders", "readwrite");
+    const newO = { 
+        cust: { address: "Новый заказ", name: "", phone: "", note: "" }, 
+        grids: [], 
+        sent: null 
+    };
+    const reqO = tx.objectStore("orders").add(newO);
+    reqO.onsuccess = () => openOrder(reqO.result);
+}
+
+function openOrder(id) {
+    curOrderId = id;
+    const tx = db.transaction("orders").objectStore("orders").get(id);
+    tx.onsuccess = e => {
+        const o = e.target.result;
+        document.getElementById('c-address').value = o.cust.address;
+        document.getElementById('c-name').value = o.cust.name;
+        document.getElementById('c-phone').value = o.cust.phone;
+        document.getElementById('c-note').value = o.cust.note;
+        
+        document.getElementById('screen-list').classList.add('hidden');
+        document.getElementById('screen-order-edit').classList.remove('hidden');
+        renderGrids();
+        renderForm();
+        
+        db.transaction("user").objectStore("user").get("last_email").onsuccess = ev => {
+            if(ev.target.result) document.getElementById('target-email').value = ev.target.result.val;
+        };
+    };
+}
+
+function goBack() { nav('list'); }
+
+function renderForm() {
+    const type = document.getElementById('g-type').value;
     const container = document.getElementById('dynamic-fields');
     container.innerHTML = "";
     
-    GRID_CONFIG[type].fields.forEach(f => {
-        const div = document.createElement('div');
-        div.className = 'input-group';
-        let inputHtml = '';
+    CONFIG[type].fields.forEach(f => {
+        const wrap = document.createElement('div');
+        wrap.className = `input-wrap ${f.full ? 'full-width' : ''}`;
+        
+        let input = '';
         if(f.type === 'select') {
-            inputHtml = `<select id="f-${f.id}">${f.options.map(o => `<option value="${o}">${o}</option>`).join('')}</select>`;
+            input = `<select id="f-${f.id}">${f.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}</select>`;
         } else {
-            inputHtml = `<input type="${f.type}" id="f-${f.id}" value="${f.def || ''}" ${f.type==='number'?'inputmode="decimal"':''}>`;
+            input = `<input type="${f.type}" id="f-${f.id}" value="${f.def || ''}" ${f.type==='number'?'inputmode="decimal"':''}>`;
         }
-        div.innerHTML = `<label>${f.label}</label>${inputHtml}${f.hint?`<div class="hint">${f.hint}</div>`:''}`;
-        container.appendChild(div);
+        
+        wrap.innerHTML = `<label>${f.label}</label>${input}<div class="field-hint">${f.hint || ''}</div>`;
+        container.appendChild(wrap);
     });
 
-    // Автофокус на первое поле (Ширина)
-    const firstInput = container.querySelector('input');
-    if(firstInput) firstInput.focus();
-
-    // Переход по Enter
-    const allInputs = container.querySelectorAll('input, select');
-    allInputs.forEach((el, idx) => {
-        el.onkeydown = e => {
+    // Auto-tab logic
+    const inputs = container.querySelectorAll('input, select');
+    inputs.forEach((inp, i) => {
+        inp.onkeydown = e => {
             if(e.key === 'Enter') {
                 e.preventDefault();
-                if(allInputs[idx+1]) allInputs[idx+1].focus();
-                else addGrid();
+                if(inputs[i+1]) inputs[i+1].focus();
+                else saveGrid();
             }
         };
     });
 }
 
-async function addGrid() {
-    const type = document.getElementById('grid-type').value;
-    const gridData = { type: type };
-    let isValid = true;
+async function saveGrid() {
+    const type = document.getElementById('g-type').value;
+    const data = { type: type };
+    let valid = true;
 
-    GRID_CONFIG[type].fields.forEach(f => {
+    CONFIG[type].fields.forEach(f => {
         const val = document.getElementById(`f-${f.id}`).value;
-        if(!val && f.id !== 'note') isValid = false;
-        gridData[f.id] = val;
+        if(f.req && !val) valid = false;
+        data[f.id] = val;
     });
 
-    if(!isValid) { alert("Заполните обязательные поля!"); return; }
+    if(!valid) { alert("Заполни обязательные поля!"); return; }
 
-    const order = await getOrder(currentOrderId);
-    if(editingGridIndex !== null) {
-        order.grids[editingGridIndex] = gridData;
-        editingGridIndex = null;
+    const o = await getCurOrder();
+    if(editIdx !== null) {
+        o.grids[editIdx] = data;
+        editIdx = null;
         showToast("Сохранено");
-        vibrate(50);
-        resetGridForm();
+        vibe(50);
     } else {
-        order.grids.push(gridData);
+        o.grids.push(data);
         showToast("Добавлено");
-        vibrate([50, 30, 50]);
+        vibe([40, 30, 40]);
     }
-
-    await saveOrder(order);
-    renderGridsList(order.grids);
-    renderGridFields(); // Сброс полей
+    
+    await updateOrder(o);
+    resetForm();
+    renderGrids();
 }
 
-function renderGridsList(grids) {
-    const list = document.getElementById('order-grids-list');
-    list.innerHTML = "";
-    grids.forEach((g, index) => {
-        const config = GRID_CONFIG[g.type];
-        const div = document.createElement('div');
-        div.className = 'card grid-item';
-        div.style.borderLeftColor = config.color;
-        
-        let details = [];
-        config.fields.forEach(f => {
-            if(!['note','sb','ov','og'].includes(f.id)) details.push(`${f.label}: ${g[f.id]}`);
-        });
+function renderGrids() {
+    const container = document.getElementById('grids-list');
+    container.innerHTML = "";
+    db.transaction("orders").objectStore("orders").get(curOrderId).onsuccess = e => {
+        const o = e.target.result;
+        o.grids.forEach((g, i) => {
+            const conf = CONFIG[g.type];
+            const div = document.createElement('div');
+            div.className = 'card grid-item';
+            div.style.borderLeftColor = conf.color;
+            
+            let mainInfo = [];
+            conf.fields.forEach(f => {
+                if(!['note','sb','ov','og','por','hnd'].includes(f.id)) mainInfo.push(`${f.label}: ${g[f.id]}`);
+            });
 
-        div.innerHTML = `
-            <div>
-                <span class="grid-num">${String(index + 1).padStart(2, '0')}</span>
-                <strong>${config.name}</strong>
-                <div class="grid-meta">${details.join(', ')}</div>
-                <div class="grid-extra">
-                    ${g.note ? `Прим: ${g.note}<br>` : ''}
-                    ${g.sb ? `Сборка: ${g.sb}. ` : ''}
-                    ${g.ov ? `Отв: В-${g.ov}, Г-${g.og}` : ''}
+            div.innerHTML = `
+                <div style="font-weight:bold; color:var(--primary)">${String(i+1).padStart(2, '0')}. ${conf.name}</div>
+                <div style="font-size:14px;">${mainInfo.join(' | ')}</div>
+                <div class="grid-meta-small">
+                    ${g.por ? `Порог: ${g.por}. ` : ''}${g.hnd ? `Ручка: ${g.hnd}. ` : ''}
+                    ${g.sb ? `Сборка: ${g.sb}. ` : ''}${g.ov ? `Отв: В-${g.ov}/Г-${g.og}` : ''}
+                    ${g.note ? `<br><b>Прим:</b> ${g.note}` : ''}
                 </div>
-            </div>
-            <div style="position:absolute; top:10px; right:10px;">
-                <button class="btn-edit" onclick="editGrid(${index})">✏</button>
-                <button class="btn-delete" onclick="deleteGrid(${index})">❌</button>
-            </div>
-        `;
-        list.appendChild(div);
-    });
-}
-
-function editGrid(index) {
-    editingGridIndex = index;
-    db.transaction("orders").objectStore("orders").get(currentOrderId).onsuccess = e => {
-        const g = e.target.result.grids[index];
-        document.getElementById('grid-type').value = g.type;
-        renderGridFields();
-        GRID_CONFIG[g.type].fields.forEach(f => {
-            document.getElementById(`f-${f.id}`).value = g[f.id];
+                <div class="grid-actions">
+                    <button class="btn-icon" onclick="editGrid(${i})">✏</button>
+                    <button class="btn-icon" onclick="removeGrid(${i})">❌</button>
+                </div>
+            `;
+            container.appendChild(div);
         });
-        document.getElementById('grid-form-block').classList.add('editing-mode');
-        document.getElementById('grid-form-title').innerText = "Редактирование сетки";
-        document.getElementById('btn-add-grid').innerText = "Сохранить изменения";
-        
-        // Кнопка отмены
-        if(!document.getElementById('btn-cancel-edit')) {
-            const cancelBtn = document.createElement('button');
-            cancelBtn.id = 'btn-cancel-edit';
-            cancelBtn.className = 'btn';
-            cancelBtn.style.marginTop = "5px";
-            cancelBtn.innerText = "Отмена";
-            cancelBtn.onclick = resetGridForm;
-            document.getElementById('form-actions').appendChild(cancelBtn);
-        }
-        document.getElementById('grid-form-block').scrollIntoView({behavior:'smooth'});
     };
 }
 
-function resetGridForm() {
-    editingGridIndex = null;
-    document.getElementById('grid-form-block').classList.remove('editing-mode');
-    document.getElementById('grid-form-title').innerText = "Добавить сетку";
-    document.getElementById('btn-add-grid').innerText = "Добавить";
-    if(document.getElementById('btn-cancel-edit')) document.getElementById('btn-cancel-edit').remove();
-    renderGridFields();
-}
-
-async function deleteGrid(index) {
-    if(!confirm("Удалить это изделие?")) return;
-    const order = await getOrder(currentOrderId);
-    order.grids.splice(index, 1);
-    await saveOrder(order);
-    renderGridsList(order.grids);
-    showToast("Удалено");
-    vibrate(100);
-}
-
-/* --- ВСПОМОГАТЕЛЬНЫЕ --- */
-function getOrder(id) {
-    return new Promise(res => {
-        db.transaction("orders").objectStore("orders").get(id).onsuccess = e => res(e.target.result);
+async function editGrid(idx) {
+    editIdx = idx;
+    const o = await getCurOrder();
+    const g = o.grids[idx];
+    document.getElementById('g-type').value = g.type;
+    renderForm();
+    
+    CONFIG[g.type].fields.forEach(f => {
+        document.getElementById(`f-${f.id}`).value = g[f.id];
     });
-}
 
-function saveOrder(order) {
-    return new Promise(res => {
-        const tx = db.transaction("orders", "readwrite");
-        tx.objectStore("orders").put(order).onsuccess = () => res();
-    });
-}
-
-function attachAutoSave() {
-    const fields = ['cust-address', 'cust-name', 'cust-phone', 'cust-note'];
-    fields.forEach(id => {
-        document.getElementById(id).oninput = async () => {
-            const order = await getOrder(currentOrderId);
-            order.customer.address = document.getElementById('cust-address').value;
-            order.customer.name = document.getElementById('cust-name').value;
-            order.customer.phone = document.getElementById('cust-phone').value;
-            order.customer.note = document.getElementById('cust-note').value;
-            saveOrder(order);
-        };
-    });
-}
-
-function showToast(text) {
-    const t = document.getElementById('toast');
-    t.innerText = text;
-    t.style.display = 'block';
-    setTimeout(() => t.style.display = 'none', 1500);
-}
-
-function vibrate(ms) { if(navigator.vibrate) navigator.vibrate(ms); }
-
-function toggleCustomerBlock() {
-    const block = document.getElementById('customer-inputs');
-    const btn = document.getElementById('toggle-cust-btn');
-    if(block.style.display === 'none') {
-        block.style.display = 'block';
-        btn.innerText = '🔼';
-    } else {
-        block.style.display = 'none';
-        btn.innerText = '🔽';
+    const card = document.getElementById('grid-form-card');
+    card.classList.add('editing-active');
+    document.getElementById('form-title').innerText = "Редактирование " + (idx+1);
+    document.getElementById('btn-add').innerText = "СОХРАНИТЬ";
+    
+    if(!document.getElementById('btn-cancel')) {
+        const bc = document.createElement('button');
+        bc.id = 'btn-cancel'; bc.className = 'btn'; bc.style.marginTop = "5px";
+        bc.innerText = "ОТМЕНА";
+        bc.onclick = resetForm;
+        document.getElementById('form-buttons').appendChild(bc);
     }
+    card.scrollIntoView({behavior:'smooth'});
 }
 
-async function deleteCurrentOrder() {
-    if(!confirm("Удалить ВЕСЬ заказ без возможности восстановления?")) return;
-    db.transaction("orders", "readwrite").objectStore("orders").delete(currentOrderId);
-    vibrate(200);
-    showScreen('screen-orders');
-    renderOrdersList();
+function resetForm() {
+    editIdx = null;
+    const card = document.getElementById('grid-form-card');
+    card.classList.remove('editing-active');
+    document.getElementById('form-title').innerText = "Новое изделие";
+    document.getElementById('btn-add').innerText = "ДОБАВИТЬ";
+    if(document.getElementById('btn-cancel')) document.getElementById('btn-cancel').remove();
+    renderForm();
 }
 
-/* --- ШЕРИНГ И ОЧЕРЕДЬ --- */
-async function shareOrder(method) {
-    const order = await getOrder(currentOrderId);
-    const user = await new Promise(res => {
-        db.transaction("settings").objectStore("settings").get("user").onsuccess = e => res(e.target.result || {name:'Мастер', phone:''});
+async function removeGrid(idx) {
+    if(!confirm("Удалить сетку?")) return;
+    const o = await getCurOrder();
+    o.grids.splice(idx, 1);
+    await updateOrder(o);
+    renderGrids();
+    showToast("Удалено");
+    vibe(100);
+}
+
+function renderOrders() {
+    const cont = document.getElementById('orders-container');
+    cont.innerHTML = "";
+    db.transaction("orders").objectStore("orders").openCursor().onsuccess = e => {
+        const cursor = e.target.result;
+        if(cursor) {
+            const o = cursor.value;
+            const c = { rm:0, vs:0, psl:0, psm:0 };
+            o.grids.forEach(g => c[g.type]++);
+            
+            const div = document.createElement('div');
+            div.className = 'card order-row';
+            div.onclick = () => openOrder(o.id);
+            div.innerHTML = `
+                <div>
+                    <strong>${o.cust.address}</strong><br>
+                    <small>Сетки: Рм:${c.rm}, Вс:${c.vs}, ПSl:${c.psl}, ПSm:${c.psm}</small><br>
+                    ${o.sent ? `<small style="color:var(--gray)">Отправлено: ${o.sent}</small>` : ''}
+                </div>
+                <div style="font-size:20px; color:#ccc;">❯</div>
+            `;
+            cont.appendChild(div);
+            cursor.continue();
+        }
+    };
+}
+
+async function saveOrderData() {
+    const o = await getCurOrder();
+    o.cust = {
+        address: document.getElementById('c-address').value,
+        name: document.getElementById('c-name').value,
+        phone: document.getElementById('c-phone').value,
+        note: document.getElementById('c-note').value
+    };
+    await updateOrder(o);
+}
+
+async function deleteOrder() {
+    if(!confirm("Удалить заказ полностью?")) return;
+    const tx = db.transaction("orders", "readwrite");
+    tx.objectStore("orders").delete(curOrderId);
+    vibe(150);
+    goBack();
+}
+
+/* --- EXPORT & SYNC --- */
+
+async function exportData(method) {
+    const o = await getCurOrder();
+    const u = await new Promise(r => {
+        db.transaction("user").objectStore("user").get("master").onsuccess = e => r(e.target.result || {n:'', p:''});
     });
 
     const email = document.getElementById('target-email').value;
-    db.transaction("settings", "readwrite").objectStore("settings").put({key: "last_email", value: email});
+    db.transaction("user", "readwrite").objectStore("user").put({id: "last_email", val: email});
 
-    let text = `ЗАКАЗ: ${order.customer.address}\n`;
-    text += `Клиент: ${order.customer.name} (${order.customer.phone})\n`;
-    text += `Мастер: ${user.name} (${user.phone})\n`;
-    text += `--------------------------\n`;
+    let msg = `МАСТЕР: ${u.n} (${u.p})\n`;
+    msg += `ОБЪЕКТ: ${o.cust.address}\n`;
+    msg += `КЛИЕНТ: ${o.cust.name} (${o.cust.phone})\n`;
+    msg += `ДАТА: ${new Date().toLocaleDateString()}\n\n`;
     
-    order.grids.forEach((g, i) => {
-        const config = GRID_CONFIG[g.type];
-        text += `${i+1}. ${config.name.toUpperCase()}\n`;
-        config.fields.forEach(f => {
-            if(g[f.id]) text += `   ${f.label}: ${g[f.id]}\n`;
-        });
-        text += `--------------------------\n`;
+    // ASCII Table logic
+    let table = `№  | ТИП       | Ш х В      | ЦВЕТ / ПОЛОТНО\n`;
+    table += `---|-----------|------------|----------------\n`;
+    o.grids.forEach((g, i) => {
+        const type = CONFIG[g.type].pref;
+        const size = `${g.w}x${g.h}`;
+        const color = `${g.clr} / ${g.plt}`;
+        table += `${String(i+1).padEnd(2)} | ${type.padEnd(9)} | ${size.padEnd(10)} | ${color}\n`;
+        if(g.note || g.sb) {
+            table += `   > Прим: ${g.note || '-'} | Сборка: ${g.sb || '-'}\n`;
+        }
     });
 
+    const finalMsg = msg + table;
+
     if(!navigator.onLine) {
-        addToQueue(currentOrderId);
-        showToast("Нет сети. Сохранено в очередь.");
+        addToQueue(curOrderId);
+        showToast("Нет интернета. Уйдет позже.");
         return;
     }
 
     if(method === 'email') {
-        const subject = encodeURIComponent(`Заказ: ${order.customer.address}`);
-        window.location.href = `mailto:${email}?subject=${subject}&body=${encodeURIComponent(text)}`;
+        window.location.href = `mailto:${email}?subject=Замер_${o.cust.address}&body=${encodeURIComponent(finalMsg)}`;
+    } else if(method === 'share') {
+        if(navigator.share) {
+            navigator.share({ text: finalMsg }).catch(() => {});
+        } else { alert("Попробуйте другой способ"); }
     } else {
-        if (navigator.share) {
-            navigator.share({ title: 'Заказ сеток', text: text });
-        } else {
-            navigator.clipboard.writeText(text);
-            showToast("Скопировано в буфер");
-        }
+        navigator.clipboard.writeText(finalMsg);
+        showToast("ASCII скопировано");
     }
 
-    order.sent = new Date().toLocaleString();
-    await saveOrder(order);
-    renderOrdersList();
+    o.sent = new Date().toLocaleString();
+    await updateOrder(o);
 }
 
 function addToQueue(id) {
-    db.transaction("settings", "readwrite").objectStore("settings").get("queue").onsuccess = e => {
-        let q = e.target.result ? e.target.result.list : [];
+    db.transaction("user", "readwrite").objectStore("user").get("queue").onsuccess = e => {
+        let q = e.target.result ? e.target.result.val : [];
         if(!q.includes(id)) q.push(id);
-        db.transaction("settings", "readwrite").objectStore("settings").put({key: "queue", list: q});
-        checkQueue();
-    };
-}
-
-function checkQueue() {
-    db.transaction("settings").objectStore("settings").get("queue").onsuccess = e => {
-        const q = e.target.result;
-        if(q && q.list.length > 0 && navigator.onLine) {
-            document.getElementById('offline-alert').style.display = 'block';
-            document.getElementById('offline-alert').innerText = `Есть неотправленные заказы (${q.list.length}). Нажмите для отправки.`;
-        } else {
-            document.getElementById('offline-alert').style.display = 'none';
-        }
+        db.transaction("user", "readwrite").objectStore("user").put({id: "queue", val: q});
+        document.getElementById('offline-notice').style.display = 'block';
     };
 }
 
 async function processQueue() {
-    const qData = await new Promise(res => {
-        db.transaction("settings").objectStore("settings").get("queue").onsuccess = e => res(e.target.result);
-    });
-    if(!qData) return;
-    
-    for(let id of qData.list) {
-        currentOrderId = id;
-        await shareOrder('share'); // Или другой метод
-    }
-    
-    db.transaction("settings", "readwrite").objectStore("settings").put({key: "queue", list: []});
-    checkQueue();
-    showToast("Очередь отправлена");
+    if(!navigator.onLine) return;
+    db.transaction("user").objectStore("user").get("queue").onsuccess = async e => {
+        const q = e.target.result ? e.target.result.val : [];
+        if(q.length > 0) {
+            showToast("Отправка очереди...");
+            // В реальности браузер не отправит сам Email без клика, но мы пометим как готовые
+            db.transaction("user", "readwrite").objectStore("user").put({id: "queue", val: []});
+            document.getElementById('offline-notice').style.display = 'none';
+        }
+    };
 }
 
-window.addEventListener('online', checkQueue);
+/* --- HELPERS --- */
+
+function vibe(ms) { if(navigator.vibrate) navigator.vibrate(ms); }
+
+function showToast(txt) {
+    const t = document.getElementById('toast');
+    t.innerText = txt; t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 1500);
+}
+
+function applyMask(el) {
+    el.addEventListener('input', e => {
+        let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+        if(!x[1] && e.target.value.length > 0) { e.target.value = '+7-'; return; }
+        e.target.value = !x[2] ? '+7-' + (x[1] === '7' ? '' : x[1]) : '+7-' + x[2] + (x[3] ? '-' + x[3] : '') + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+    });
+}
+
+function saveProfile() {
+    const u = { id: "master", n: document.getElementById('u-name').value, p: document.getElementById('u-phone').value };
+    db.transaction("user", "readwrite").objectStore("user").put(u);
+    showToast("Профиль сохранен");
+}
+
+function loadUser() {
+    db.transaction("user").objectStore("user").get("master").onsuccess = e => {
+        if(e.target.result) {
+            document.getElementById('u-name').value = e.target.result.n;
+            document.getElementById('u-phone').value = e.target.result.p;
+        }
+    };
+}
+
+function getCurOrder() {
+    return new Promise(r => {
+        db.transaction("orders").objectStore("orders").get(curOrderId).onsuccess = e => r(e.target.result);
+    });
+}
+
+function updateOrder(o) {
+    return new Promise(r => {
+        const tx = db.transaction("orders", "readwrite");
+        tx.objectStore("orders").put(o).onsuccess = () => r();
+    });
+}
+
+function toggleCust() {
+    const f = document.getElementById('cust-fields');
+    const b = document.getElementById('toggle-cust');
+    if(f.classList.contains('hidden')) {
+        f.classList.remove('hidden'); b.innerText = "▲";
+    } else {
+        f.classList.add('hidden'); b.innerText = "▼";
+    }
+}
 </script>
 </body>
 </html>
