@@ -1,17 +1,12 @@
 {
-  "name": "Inicial. Москитные сетки",
-  "short_name": "InicialPRO",
-  "description": "Профессиональное приложение для замера москитных сеток",
+  "name": "Инициал",
+  "short_name": "Инициал",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#f2f4f7",
-  "theme_color": "#007bff",
+  "background_color": "#f5f5f5",
+  "theme_color": "#2196F3",
   "icons": [
-    {
-      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyOTAgMjkwIj48ZGVmcz48c3R5bGU+LmF7ZmlsbDojMzMzO308L3N0eWxlPjwvZGVmcz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMTAzIC0xMDMpIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNDUgMTQ1KSI+PHBhdGggY2xhc3M9ImEiIGQ9Ik0xNDQgODZsNTYtNDVWNzZWMTEwaDE0Nmw0MC05OEgxMDRWMTQ0bC00MCA0MEwxNDQsMjg2djQwaDE0Nkw4NiwxODRWODZoNTZ6Ii8+PC9nPjwvZz48L3N2Zz4=",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
+    { "src": "icon192х192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon180х180.png", "sizes": "180x180", "type": "image/png" }
   ]
 }
