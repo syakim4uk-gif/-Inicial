@@ -25,10 +25,9 @@
             margin: 0; padding: 0; height: 100%; width: 100%;
             font-family: -apple-system, system-ui, sans-serif;
             background: var(--bg); color: var(--text);
-            overflow: hidden; /* Чтобы не дергалось при клавиатуре */
+            overflow: hidden;
         }
 
-        /* Главный контейнер с фиксированной высотой */
         .app-wrapper {
             display: flex;
             flex-direction: column;
@@ -36,7 +35,6 @@
             height: 100dvh;
         }
 
-        /* Прокручиваемая область */
         .main-content {
             flex: 1;
             overflow-y: auto;
@@ -44,7 +42,6 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        /* Нижняя навигация - всегда видна */
         .nav-bar {
             height: 65px;
             background: #fff;
@@ -67,7 +64,6 @@
 
         .nav-item.active { color: var(--primary); }
 
-        /* Карточки и сетка */
         .card { 
             background: #fff; border-radius: 12px; padding: 12px; 
             margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -98,7 +94,6 @@
             min-height: 12px;
         }
 
-        /* Специфические стили для списка */
         .order-row {
             display: flex; justify-content: space-between; align-items: center;
             border-left: 4px solid var(--primary);
@@ -129,7 +124,6 @@
         .btn-blue { background: var(--primary); color: #fff; }
         .btn-red { background: #ff5252; color: #fff; }
 
-        /* Анимации уведомлений */
         #toast {
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
             background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px;
@@ -137,13 +131,8 @@
         }
 
         .editing-active { background: #fff9c4 !important; }
-        
         .hidden { display: none !important; }
-
-        #offline-notice {
-            background: #ffa000; color: white; text-align: center;
-            padding: 5px; font-size: 12px; display: none;
-        }
+        #offline-notice { background: #ffa000; color: white; text-align: center; padding: 5px; font-size: 12px; display: none; }
     </style>
 </head>
 <body>
@@ -217,7 +206,7 @@
                     <button class="btn btn-blue" onclick="exportData('email')">E-mail</button>
                     <button class="btn btn-blue" onclick="exportData('share')">Поделиться</button>
                 </div>
-                <button class="btn btn-blue" onclick="exportData('copy')" style="margin-top:10px; background:#666;">Копировать ASCII</button>
+                <button class="btn btn-blue" onclick="exportData('copy')" style="margin-top:10px; background:#666;">Копировать текст</button>
             </div>
             
             <button class="btn btn-red" onclick="deleteOrder()" style="margin-top:20px;">УДАЛИТЬ ЗАКАЗ</button>
@@ -248,7 +237,6 @@
 <div id="toast"></div>
 
 <script>
-/* --- КОНФИГУРАЦИЯ СЕТОК --- */
 const CONFIG = {
     rm: { name: "Рамочная", pref: "Рм", color: "var(--rm-color)", fields: [
         { id: "w", label: "Ширина, мм", type: "number", hint: "световой проем", req: true },
@@ -268,7 +256,7 @@ const CONFIG = {
     psl: { name: "Плиссе Slim", pref: "ПSl", color: "var(--psl-color)", fields: [
         { id: "w", label: "Ширина, мм", type: "number", hint: "размер изделия", req: true },
         { id: "h", label: "Высота, мм", type: "number", hint: "размер изделия", req: true },
-        { id: "dir", label: "Закрывание", type: "select", options: ["⬅", "➡", "⬇", "⬆", "➡⬅"], hint: "со стороны установки", req: true },
+        { id: "dir", label: "Закрывание", type: "select", options: ["<--", "-->", "⬇", "⬆", "--> <--"], hint: "направление закрывания", req: true },
         { id: "clr", label: "Цвет", type: "select", options: ["белый", "антрацит", "коричневый", "на заказ"], req: true },
         { id: "plt", label: "Полотно", type: "select", options: ["стандарт", "антиМошка", "антиКошка"], req: true },
         { id: "sb", label: "Сборка", type: "select", options: ["собрать", "не собирать"], hint: "как забирать?", req: true },
@@ -279,19 +267,18 @@ const CONFIG = {
     psm: { name: "Плиссе Smart", pref: "ПSm", color: "var(--psm-color)", fields: [
         { id: "w", label: "Ширина", type: "number", hint: "размер изделия", req: true },
         { id: "h", label: "Высота", type: "number", hint: "размер изделия", req: true },
-        { id: "dir", label: "Закрывание", type: "select", options: ["<--", "-->", "⬇", "⬆", "--> <--"], hint: "со стороны установки", req: true },
+        { id: "dir", label: "Закрывание", type: "select", options: ["<--", "-->", "⬇", "⬆", "--> <--"], hint: "направление закрывания", req: true },
         { id: "por", label: "Порог", type: "select", options: ["без", "тонкий анод.", "тонкий окраш."], hint: "если окраш. - цвет в прим.", req: true },
         { id: "hnd", label: "Ручка", type: "select", options: ["без", "снаружи", "внутри", "снаружи+внутри"], req: true },
         { id: "clr", label: "Цвет", type: "select", options: ["белый", "антрацит", "коричневый", "на заказ"], req: true },
         { id: "plt", label: "Полотно", type: "select", options: ["стандарт", "антиМошка", "антиКошка"], req: true },
-        { id: "sb", label: "Сборка", type: "select", options: ["собрать", "не собирать"], req: true },
+        { id: "sb", label: "Сборка", type: "select", options: ["собрать", "не собирать"], hint: "как забирать?", req: true },
         { id: "ov", label: "Отв. верт.", type: "number", def: "без" },
         { id: "og", label: "Отв. гор.", type: "number", def: "без" },
         { id: "note", label: "Прим.", type: "text", full: true }
     ]}
 };
 
-/* --- DB ENGINE (IndexedDB) --- */
 let db, curOrderId = null, editIdx = null;
 const req = indexedDB.open("InitialDB_V2", 1);
 req.onupgradeneeded = e => {
@@ -299,33 +286,22 @@ req.onupgradeneeded = e => {
     d.createObjectStore("orders", { keyPath: "id", autoIncrement: true });
     d.createObjectStore("user", { keyPath: "id" });
 };
-req.onsuccess = e => {
-    db = e.target.result;
-    init();
-};
+req.onsuccess = e => { db = e.target.result; init(); };
 
 function init() {
-    loadUser();
-    renderOrders();
+    loadUser(); renderOrders();
     applyMask(document.getElementById('c-phone'));
     applyMask(document.getElementById('u-phone'));
-    
-    // Auto-save customer
     ['c-address', 'c-name', 'c-phone', 'c-note'].forEach(id => {
         document.getElementById(id).onchange = () => saveOrderData();
     });
-
-    // Offline check
     window.addEventListener('online', processQueue);
     processQueue();
 }
 
-/* --- LOGIC --- */
-
 function nav(scr) {
     document.querySelectorAll('.screen, #screen-list, #screen-order-edit, #screen-profile').forEach(s => s.classList.add('hidden'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    
     if(scr === 'list') {
         document.getElementById('screen-list').classList.remove('hidden');
         document.getElementById('nav-list').classList.add('active');
@@ -338,30 +314,22 @@ function nav(scr) {
 
 async function createOrder() {
     const tx = db.transaction("orders", "readwrite");
-    const newO = { 
-        cust: { address: "Новый заказ", name: "", phone: "", note: "" }, 
-        grids: [], 
-        sent: null 
-    };
+    const newO = { cust: { address: "Новый заказ", name: "", phone: "", note: "" }, grids: [], sent: null };
     const reqO = tx.objectStore("orders").add(newO);
     reqO.onsuccess = () => openOrder(reqO.result);
 }
 
 function openOrder(id) {
     curOrderId = id;
-    const tx = db.transaction("orders").objectStore("orders").get(id);
-    tx.onsuccess = e => {
+    db.transaction("orders").objectStore("orders").get(id).onsuccess = e => {
         const o = e.target.result;
         document.getElementById('c-address').value = o.cust.address;
         document.getElementById('c-name').value = o.cust.name;
         document.getElementById('c-phone').value = o.cust.phone;
         document.getElementById('c-note').value = o.cust.note;
-        
         document.getElementById('screen-list').classList.add('hidden');
         document.getElementById('screen-order-edit').classList.remove('hidden');
-        renderGrids();
-        renderForm();
-        
+        renderGrids(); renderForm();
         db.transaction("user").objectStore("user").get("last_email").onsuccess = ev => {
             if(ev.target.result) document.getElementById('target-email').value = ev.target.result.val;
         };
@@ -374,23 +342,15 @@ function renderForm() {
     const type = document.getElementById('g-type').value;
     const container = document.getElementById('dynamic-fields');
     container.innerHTML = "";
-    
     CONFIG[type].fields.forEach(f => {
         const wrap = document.createElement('div');
         wrap.className = `input-wrap ${f.full ? 'full-width' : ''}`;
-        
-        let input = '';
-        if(f.type === 'select') {
-            input = `<select id="f-${f.id}">${f.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}</select>`;
-        } else {
-            input = `<input type="${f.type}" id="f-${f.id}" value="${f.def || ''}" ${f.type==='number'?'inputmode="decimal"':''}>`;
-        }
-        
+        let input = f.type === 'select' 
+            ? `<select id="f-${f.id}">${f.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}</select>`
+            : `<input type="${f.type}" id="f-${f.id}" value="${f.def || ''}" ${f.type==='number'?'inputmode="decimal"':''}>`;
         wrap.innerHTML = `<label>${f.label}</label>${input}<div class="field-hint">${f.hint || ''}</div>`;
         container.appendChild(wrap);
     });
-
-    // Auto-tab logic
     const inputs = container.querySelectorAll('input, select');
     inputs.forEach((inp, i) => {
         inp.onkeydown = e => {
@@ -407,32 +367,22 @@ async function saveGrid() {
     const type = document.getElementById('g-type').value;
     const data = { type: type };
     let valid = true;
-
     CONFIG[type].fields.forEach(f => {
         const val = document.getElementById(`f-${f.id}`).value;
         if(f.req && !val) valid = false;
         data[f.id] = val;
     });
-
     if(!valid) { alert("Заполни обязательные поля!"); return; }
-
     const o = await getCurOrder();
     if(editIdx !== null) {
-        o.grids[editIdx] = data;
-        editIdx = null;
-        showToast("Сохранено");
-        vibe(50);
+        o.grids[editIdx] = data; editIdx = null; showToast("Сохранено"); vibe(50);
     } else {
-        o.grids.push(data);
-        showToast("Добавлено");
-        vibe([40, 30, 40]);
+        o.grids.push(data); showToast("Добавлено"); vibe([40, 30, 40]);
     }
-    
-    await updateOrder(o);
-    resetForm();
-    renderGrids();
+    await updateOrder(o); resetForm(); renderGrids();
 }
 
+/* Исправление 2: Крупный шрифт для порога и ручки в Pliссе Smart */
 function renderGrids() {
     const container = document.getElementById('grids-list');
     container.innerHTML = "";
@@ -443,17 +393,20 @@ function renderGrids() {
             const div = document.createElement('div');
             div.className = 'card grid-item';
             div.style.borderLeftColor = conf.color;
-            
             let mainInfo = [];
-            conf.fields.forEach(f => {
-                if(!['note','sb','ov','og','por','hnd'].includes(f.id)) mainInfo.push(`${f.label}: ${g[f.id]}`);
+            
+            conf.fields.forEach(f => { 
+                let exclude = ['note','sb','ov','og'];
+                // Если НЕ Smart, исключаем порог и ручку из крупного шрифта
+                if(g.type !== 'psm') exclude.push('por', 'hnd');
+                
+                if(!exclude.includes(f.id)) mainInfo.push(`${f.label}: ${g[f.id]}`); 
             });
 
             div.innerHTML = `
                 <div style="font-weight:bold; color:var(--primary)">${String(i+1).padStart(2, '0')}. ${conf.name}</div>
                 <div style="font-size:14px;">${mainInfo.join(' | ')}</div>
                 <div class="grid-meta-small">
-                    ${g.por ? `Порог: ${g.por}. ` : ''}${g.hnd ? `Ручка: ${g.hnd}. ` : ''}
                     ${g.sb ? `Сборка: ${g.sb}. ` : ''}${g.ov ? `Отв: В-${g.ov}/Г-${g.og}` : ''}
                     ${g.note ? `<br><b>Прим:</b> ${g.note}` : ''}
                 </div>
@@ -473,21 +426,15 @@ async function editGrid(idx) {
     const g = o.grids[idx];
     document.getElementById('g-type').value = g.type;
     renderForm();
-    
-    CONFIG[g.type].fields.forEach(f => {
-        document.getElementById(`f-${f.id}`).value = g[f.id];
-    });
-
+    CONFIG[g.type].fields.forEach(f => { document.getElementById(`f-${f.id}`).value = g[f.id]; });
     const card = document.getElementById('grid-form-card');
     card.classList.add('editing-active');
     document.getElementById('form-title').innerText = "Редактирование " + (idx+1);
     document.getElementById('btn-add').innerText = "СОХРАНИТЬ";
-    
     if(!document.getElementById('btn-cancel')) {
         const bc = document.createElement('button');
         bc.id = 'btn-cancel'; bc.className = 'btn'; bc.style.marginTop = "5px";
-        bc.innerText = "ОТМЕНА";
-        bc.onclick = resetForm;
+        bc.innerText = "ОТМЕНА"; bc.onclick = resetForm;
         document.getElementById('form-buttons').appendChild(bc);
     }
     card.scrollIntoView({behavior:'smooth'});
@@ -507,10 +454,7 @@ async function removeGrid(idx) {
     if(!confirm("Удалить сетку?")) return;
     const o = await getCurOrder();
     o.grids.splice(idx, 1);
-    await updateOrder(o);
-    renderGrids();
-    showToast("Удалено");
-    vibe(100);
+    await updateOrder(o); renderGrids(); showToast("Удалено"); vibe(100);
 }
 
 function renderOrders() {
@@ -522,18 +466,10 @@ function renderOrders() {
             const o = cursor.value;
             const c = { rm:0, vs:0, psl:0, psm:0 };
             o.grids.forEach(g => c[g.type]++);
-            
             const div = document.createElement('div');
             div.className = 'card order-row';
             div.onclick = () => openOrder(o.id);
-            div.innerHTML = `
-                <div>
-                    <strong>${o.cust.address}</strong><br>
-                    <small>Сетки: Рм:${c.rm}, Вс:${c.vs}, ПSl:${c.psl}, ПSm:${c.psm}</small><br>
-                    ${o.sent ? `<small style="color:var(--gray)">Отправлено: ${o.sent}</small>` : ''}
-                </div>
-                <div style="font-size:20px; color:#ccc;">❯</div>
-            `;
+            div.innerHTML = `<div><strong>${o.cust.address}</strong><br><small>Сетки: Рм:${c.rm}, Вс:${c.vs}, ПSl:${c.psl}, ПSm:${c.psm}</small><br>${o.sent ? `<small style="color:var(--gray)">Отправлено: ${o.sent}</small>` : ''}</div><div style="font-size:20px; color:#ccc;">❯</div>`;
             cont.appendChild(div);
             cursor.continue();
         }
@@ -542,25 +478,17 @@ function renderOrders() {
 
 async function saveOrderData() {
     const o = await getCurOrder();
-    o.cust = {
-        address: document.getElementById('c-address').value,
-        name: document.getElementById('c-name').value,
-        phone: document.getElementById('c-phone').value,
-        note: document.getElementById('c-note').value
-    };
+    o.cust = { address: document.getElementById('c-address').value, name: document.getElementById('c-name').value, phone: document.getElementById('c-phone').value, note: document.getElementById('c-note').value };
     await updateOrder(o);
 }
 
 async function deleteOrder() {
     if(!confirm("Удалить заказ полностью?")) return;
-    const tx = db.transaction("orders", "readwrite");
-    tx.objectStore("orders").delete(curOrderId);
-    vibe(150);
-    goBack();
+    db.transaction("orders", "readwrite").objectStore("orders").delete(curOrderId);
+    vibe(150); goBack();
 }
 
-/* --- EXPORT & SYNC --- */
-
+/* Исправление 1: Раздельные таблицы с новой структурой в экспорте */
 async function exportData(method) {
     const o = await getCurOrder();
     const u = await new Promise(r => {
@@ -575,20 +503,33 @@ async function exportData(method) {
     msg += `КЛИЕНТ: ${o.cust.name} (${o.cust.phone})\n`;
     msg += `ДАТА: ${new Date().toLocaleDateString()}\n\n`;
     
-    // ASCII Table logic
-    let table = `№  | ТИП       | Ш х В      | ЦВЕТ / ПОЛОТНО\n`;
-    table += `---|-----------|------------|----------------\n`;
-    o.grids.forEach((g, i) => {
-        const type = CONFIG[g.type].pref;
-        const size = `${g.w}x${g.h}`;
-        const color = `${g.clr} / ${g.plt}`;
-        table += `${String(i+1).padEnd(2)} | ${type.padEnd(9)} | ${size.padEnd(10)} | ${color}\n`;
-        if(g.note || g.sb) {
-            table += `   > Прим: ${g.note || '-'} | Сборка: ${g.sb || '-'}\n`;
-        }
-    });
+    const frameGrids = o.grids.filter(g => g.type === 'rm' || g.type === 'vs');
+    const plisseGrids = o.grids.filter(g => g.type === 'psl' || g.type === 'psm');
 
-    const finalMsg = msg + table;
+    if (frameGrids.length > 0) {
+        msg += `РАМОЧНЫЕ И ВСТАВНЫЕ СЕТКИ:\n`;
+        msg += `№  | Тип       | Ширина | Высота | Цвет      | Полотно    | Притвор | Примечание\n`;
+        msg += `---|-----------|--------|--------|-----------|------------|---------|-----------\n`;
+        frameGrids.forEach(g => {
+            const idx = o.grids.indexOf(g) + 1;
+            const conf = CONFIG[g.type];
+            msg += `${String(idx).padEnd(2)} | ${conf.name.padEnd(9)} | ${String(g.w).padEnd(6)} | ${String(g.h).padEnd(6)} | ${String(g.clr).padEnd(9)} | ${String(g.plt).padEnd(10)} | ${String(g.pr || '-').padEnd(7)} | ${g.note || ''}\n`;
+        });
+        msg += `\n`;
+    }
+
+    if (plisseGrids.length > 0) {
+        msg += `СЕТКИ ПЛИССЕ:\n`;
+        msg += `№  | Тип          | Ширина | Высота | Цвет      | Полотно    | Притвор | Закр. | Порог      | Ручка      | Примечание\n`;
+        msg += `---|--------------|--------|--------|-----------|------------|---------|-------|------------|------------|-----------\n`;
+        plisseGrids.forEach(g => {
+            const idx = o.grids.indexOf(g) + 1;
+            const conf = CONFIG[g.type];
+            msg += `${String(idx).padEnd(2)} | ${conf.name.padEnd(12)} | ${String(g.w).padEnd(6)} | ${String(g.h).padEnd(6)} | ${String(g.clr).padEnd(9)} | ${String(g.plt).padEnd(10)} | ${String(g.pr || '-').padEnd(7)} | ${String(g.dir || '-').padEnd(5)} | ${String(g.por || '-').padEnd(10)} | ${String(g.hnd || '-').padEnd(10)} | ${g.note || ''}\n`;
+        });
+    }
+
+    const finalMsg = msg;
 
     if(!navigator.onLine) {
         addToQueue(curOrderId);
@@ -604,7 +545,7 @@ async function exportData(method) {
         } else { alert("Попробуйте другой способ"); }
     } else {
         navigator.clipboard.writeText(finalMsg);
-        showToast("ASCII скопировано");
+        showToast("Текст скопирован");
     }
 
     o.sent = new Date().toLocaleString();
@@ -626,22 +567,14 @@ async function processQueue() {
         const q = e.target.result ? e.target.result.val : [];
         if(q.length > 0) {
             showToast("Отправка очереди...");
-            // В реальности браузер не отправит сам Email без клика, но мы пометим как готовые
             db.transaction("user", "readwrite").objectStore("user").put({id: "queue", val: []});
             document.getElementById('offline-notice').style.display = 'none';
         }
     };
 }
 
-/* --- HELPERS --- */
-
 function vibe(ms) { if(navigator.vibrate) navigator.vibrate(ms); }
-
-function showToast(txt) {
-    const t = document.getElementById('toast');
-    t.innerText = txt; t.style.display = 'block';
-    setTimeout(() => t.style.display = 'none', 1500);
-}
+function showToast(txt) { const t = document.getElementById('toast'); t.innerText = txt; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 1500); }
 
 function applyMask(el) {
     el.addEventListener('input', e => {
@@ -666,27 +599,13 @@ function loadUser() {
     };
 }
 
-function getCurOrder() {
-    return new Promise(r => {
-        db.transaction("orders").objectStore("orders").get(curOrderId).onsuccess = e => r(e.target.result);
-    });
-}
-
-function updateOrder(o) {
-    return new Promise(r => {
-        const tx = db.transaction("orders", "readwrite");
-        tx.objectStore("orders").put(o).onsuccess = () => r();
-    });
-}
-
+function getCurOrder() { return new Promise(r => { db.transaction("orders").objectStore("orders").get(curOrderId).onsuccess = e => r(e.target.result); }); }
+function updateOrder(o) { return new Promise(r => { const tx = db.transaction("orders", "readwrite"); tx.objectStore("orders").put(o).onsuccess = () => r(); }); }
 function toggleCust() {
     const f = document.getElementById('cust-fields');
     const b = document.getElementById('toggle-cust');
-    if(f.classList.contains('hidden')) {
-        f.classList.remove('hidden'); b.innerText = "▲";
-    } else {
-        f.classList.add('hidden'); b.innerText = "▼";
-    }
+    if(f.classList.contains('hidden')) { f.classList.remove('hidden'); b.innerText = "▲"; } 
+    else { f.classList.add('hidden'); b.innerText = "▼"; }
 }
 </script>
 </body>
