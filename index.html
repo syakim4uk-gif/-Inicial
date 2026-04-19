@@ -498,37 +498,33 @@ async function exportData(method) {
     
     let finalMsg = "";
 
-    // Изменение 1: Экспорт Email через HTML таблицу
     if (method === 'email') {
-        let html = `<html><body style="font-family: Arial, sans-serif;">`;
-        html += `<h3>Заказ: ${o.cust.address}</h3>`;
-        html += `<p><b>Мастер:</b> ${u.n} (${u.p})<br><b>Клиент:</b> ${o.cust.name} (${o.cust.phone})</p>`;
-        
+        let msg = headerText;
         const frameGrids = o.grids.filter(g => g.type === 'rm' || g.type === 'vs');
         const plisseGrids = o.grids.filter(g => g.type === 'psl' || g.type === 'psm');
 
-        const createTable = (grids, title, cols) => {
-            if (!grids.length) return "";
-            let t = `<h4>${title}</h4><table border="1" style="border-collapse: collapse; width: 100%; font-size: 12px; text-align: left;">`;
-            t += `<tr style="background: #f2f2f2;">${cols.map(c => `<th>${c}</th>`).join('')}</tr>`;
-            grids.forEach((g, idx) => {
+        if (frameGrids.length > 0) {
+            msg += `РАМОЧНЫЕ И ВСТАВНЫЕ СЕТКИ:\n`;
+            msg += `№  | Тип       | Ширина | Высота | Цвет      | Полотно    | Притвор | Примечание\n`;
+            msg += `---|-----------|--------|--------|-----------|------------|---------|-----------\n`;
+            frameGrids.forEach(g => {
+                const idx = o.grids.indexOf(g) + 1;
                 const conf = CONFIG[g.type];
-                t += `<tr>`;
-                t += `<td>${o.grids.indexOf(g) + 1}</td><td>${conf.name}</td><td>${g.w}</td><td>${g.h}</td><td>${g.clr}</td><td>${g.plt}</td>`;
-                if (title.includes("ПЛИССЕ")) {
-                    t += `<td>${g.dir || '-'}</td><td>${g.por || '-'}</td><td>${g.hnd || '-'}</td>`;
-                } else {
-                    t += `<td>${g.pr || '-'}</td>`;
-                }
-                t += `<td>${g.note || ''}</td></tr>`;
+                msg += `${String(idx).padEnd(2)} | ${conf.name.padEnd(9)} | ${String(g.w).padEnd(6)} | ${String(g.h).padEnd(6)} | ${String(g.clr).padEnd(9)} | ${String(g.plt).padEnd(10)} | ${String(g.pr || '-').padEnd(7)} | ${g.note || ''}\n`;
             });
-            return t + `</table>`;
-        };
-
-        html += createTable(frameGrids, "РАМОЧНЫЕ И ВСТАВНЫЕ", ["№", "Тип", "Ш", "В", "Цвет", "Полотно", "Притвор", "Примечание"]);
-        html += createTable(plisseGrids, "СЕТКИ ПЛИССЕ", ["№", "Тип", "Ш", "В", "Цвет", "Полотно", "Закр.", "Порог", "Ручка", "Примечание"]);
-        html += `</body></html>`;
-        finalMsg = html;
+            msg += `\n`;
+        }
+        if (plisseGrids.length > 0) {
+            msg += `СЕТКИ ПЛИССЕ:\n`;
+            msg += `№  | Тип          | Ширина | Высота | Цвет      | Полотно    | Закр. | Порог      | Ручка      | Примечание\n`;
+            msg += `---|--------------|--------|--------|-----------|------------|-------|------------|------------|-----------\n`;
+            plisseGrids.forEach(g => {
+                const idx = o.grids.indexOf(g) + 1;
+                const conf = CONFIG[g.type];
+                msg += `${String(idx).padEnd(2)} | ${conf.name.padEnd(12)} | ${String(g.w).padEnd(6)} | ${String(g.h).padEnd(6)} | ${String(g.clr).padEnd(9)} | ${String(g.plt).padEnd(10)} | ${String(g.dir || '-').padEnd(5)} | ${String(g.por || '-').padEnd(10)} | ${String(g.hnd || '-').padEnd(10)} | ${g.note || ''}\n`;
+            });
+        }
+        finalMsg = msg;
     } else {
         let msg = headerText + `--- СПИСОК ИЗДЕЛИЙ ---\n\n`;
         o.grids.forEach((g, i) => {
@@ -555,7 +551,6 @@ async function exportData(method) {
     }
 
     if(method === 'email') {
-        // Примечание: mailto имеет ограничения по длине. Если сеток много, лучше использовать копирование.
         window.location.href = `mailto:${email}?subject=Замер_${encodeURIComponent(o.cust.address)}&body=${encodeURIComponent(finalMsg)}`;
     } else if(method === 'share') {
         if(navigator.share) {
@@ -570,13 +565,11 @@ async function exportData(method) {
     await updateOrder(o);
 }
 
-// Изменение 4: Функция скачивания CSV для 1С
 async function downloadCSV() {
     const o = await getCurOrder();
     if (!o.grids.length) { showToast("Список изделий пуст"); return; }
     
-    // Формируем CSV с разделителем точка с запятой (стандарт для Excel/1C в РФ)
-    let csv = "\ufeff"; // BOM для корректного отображения кириллицы в Excel
+    let csv = "\ufeff"; 
     csv += "№;Тип;Ширина;Высота;Цвет;Полотно;Притвор;Закрывание;Порог;Ручка;Примечание\n";
     
     o.grids.forEach((g, i) => {
@@ -592,7 +585,7 @@ async function downloadCSV() {
             g.dir || "-",
             g.por || "-",
             g.hnd || "-",
-            (g.note || "").replace(/;/g, ",") // Заменяем ; в примечании, чтобы не ломать структуру
+            (g.note || "").replace(/;/g, ",") 
         ];
         csv += row.join(";") + "\n";
     });
