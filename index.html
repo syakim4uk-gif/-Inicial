@@ -72,27 +72,24 @@
         .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            gap: 6px;
         }
 
         .full-width { grid-column: span 2; }
 
         .input-wrap {
             position: relative;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
 
-        label { display: block; font-size: 11px; color: var(--gray); margin-bottom: 2px; padding-left: 4px; }
+        label { display: block; font-size: 11px; color: var(--gray); margin-bottom: 1px; padding-left: 4px; }
 
         input, select, textarea {
             width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;
             font-size: 16px; background: #fff;
         }
 
-        .field-hint {
-            font-size: 10px; color: #999; margin-top: -2px; padding-left: 4px;
-            min-height: 12px;
-        }
+        .field-hint { display: none; }
 
         .order-row {
             display: flex; justify-content: space-between; align-items: center;
@@ -206,7 +203,10 @@
                     <button class="btn btn-blue" onclick="exportData('email')">E-mail</button>
                     <button class="btn btn-blue" onclick="exportData('share')">Поделиться</button>
                 </div>
-                <button class="btn btn-blue" onclick="exportData('copy')" style="margin-top:10px; background:#666;">Копировать текст</button>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+                    <button class="btn btn-blue" onclick="exportData('copy')" style="background:#666;">Копировать</button>
+                    <button class="btn btn-blue" onclick="downloadCSV()" style="background:#4CAF50;">Скачать CSV</button>
+                </div>
             </div>
             
             <button class="btn btn-red" onclick="deleteOrder()" style="margin-top:20px;">УДАЛИТЬ ЗАКАЗ</button>
@@ -244,14 +244,14 @@ const CONFIG = {
         { id: "pr", label: "Притвор", type: "number", req: true },
         { id: "clr", label: "Цвет", type: "select", options: ["белый", "антрацит", "коричневый", "золотой дуб", "махагон", "сосна", "черно-коричневый", "на заказ"], req: true },
         { id: "plt", label: "Полотно", type: "select", options: ["стандарт", "антиМошка", "антиКошка", "ультра вью", "антиПыль", "алюминиевая"], req: true },
-        { id: "note", label: "Прим.", type: "text", full: true }
+        { id: "note", label: "Примечание", type: "text", full: true }
     ]},
     vs: { name: "Вставная", pref: "Вс", color: "var(--vs-color)", fields: [
         { id: "w", label: "Ширина, мм", type: "number", hint: "световой проем", req: true },
         { id: "h", label: "Высота, мм", type: "number", hint: "световой проем", req: true },
         { id: "clr", label: "Цвет", type: "select", options: ["белый", "антрацит", "коричневый", "на заказ"], req: true },
         { id: "plt", label: "Полотно", type: "select", options: ["стандарт", "антиМошка", "антиКошка", "ультра вью", "антиПыль", "алюминиевая"], req: true },
-        { id: "note", label: "Прим.", type: "text", full: true }
+        { id: "note", label: "Примечание", type: "text", full: true }
     ]},
     psl: { name: "Плиссе Slim", pref: "ПSl", color: "var(--psl-color)", fields: [
         { id: "w", label: "Ширина, мм", type: "number", hint: "размер изделия", req: true },
@@ -260,33 +260,33 @@ const CONFIG = {
         { id: "clr", label: "Цвет", type: "select", options: ["белый", "антрацит", "коричневый", "на заказ"], req: true },
         { id: "plt", label: "Полотно", type: "select", options: ["стандарт", "антиМошка", "антиКошка"], req: true },
         { id: "sb", label: "Сборка", type: "select", options: ["собрать", "не собирать"], hint: "как забирать?", req: true },
-        { id: "ov", label: "Отв. верт.", type: "number", def: "без", hint: "сколько отверстий?" },
-        { id: "og", label: "Отв. гор.", type: "number", def: "без", hint: "сколько отверстий?" },
-        { id: "note", label: "Прим.", type: "text", full: true }
+        { id: "ov", label: "Отверстия по вертикали", type: "number", def: "без", hint: "кол-во отверстий" },
+        { id: "og", label: "Отверстия по горизонтали", type: "number", def: "без", hint: "кол-во отверстий" },
+        { id: "note", label: "Примечание", type: "text", full: true }
     ]},
     psm: { name: "Плиссе Smart", pref: "ПSm", color: "var(--psm-color)", fields: [
         { id: "w", label: "Ширина", type: "number", hint: "размер изделия", req: true },
         { id: "h", label: "Высота", type: "number", hint: "размер изделия", req: true },
         { id: "dir", label: "Закрывание", type: "select", options: ["<--", "-->", "⬇", "⬆", "--> <--"], hint: "направление закрывания", req: true },
-        { id: "por", label: "Порог", type: "select", options: ["без", "тонкий анод.", "тонкий окраш."], hint: "если окраш. - цвет в прим.", req: true },
+        { id: "por", label: "Порог", type: "select", options: ["без", "тонкий анод.", "тонкий окраш."], hint: "если окраш. - цвет в примечании", req: true },
         { id: "hnd", label: "Ручка", type: "select", options: ["без", "снаружи", "внутри", "снаружи+внутри"], req: true },
         { id: "clr", label: "Цвет", type: "select", options: ["белый", "антрацит", "коричневый", "на заказ"], req: true },
         { id: "plt", label: "Полотно", type: "select", options: ["стандарт", "антиМошка", "антиКошка"], req: true },
         { id: "sb", label: "Сборка", type: "select", options: ["собрать", "не собирать"], hint: "как забирать?", req: true },
-        { id: "ov", label: "Отв. верт.", type: "number", def: "без" },
-        { id: "og", label: "Отв. гор.", type: "number", def: "без" },
-        { id: "note", label: "Прим.", type: "text", full: true }
+        { id: "ov", label: "Отверстия по вертикали", type: "number", def: "без", hint: "кол-во" },
+        { id: "og", label: "Отверстия по горизонтали", type: "number", def: "без", hint: "кол-во" },
+        { id: "note", label: "Примечание", type: "text", full: true }
     ]}
 };
 
 let db, curOrderId = null, editIdx = null;
-const req = indexedDB.open("InitialDB_V2", 1);
-req.onupgradeneeded = e => {
+const requestDB = indexedDB.open("InitialDB_V2", 1);
+requestDB.onupgradeneeded = e => {
     const d = e.target.result;
     d.createObjectStore("orders", { keyPath: "id", autoIncrement: true });
     d.createObjectStore("user", { keyPath: "id" });
 };
-req.onsuccess = e => { db = e.target.result; init(); };
+requestDB.onsuccess = e => { db = e.target.result; init(); };
 
 function init() {
     loadUser(); renderOrders();
@@ -347,8 +347,9 @@ function renderForm() {
         wrap.className = `input-wrap ${f.full ? 'full-width' : ''}`;
         let input = f.type === 'select' 
             ? `<select id="f-${f.id}">${f.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}</select>`
-            : `<input type="${f.type}" id="f-${f.id}" value="${f.def || ''}" ${f.type==='number'?'inputmode="decimal"':''}>`;
-        wrap.innerHTML = `<label>${f.label}</label>${input}<div class="field-hint">${f.hint || ''}</div>`;
+            : `<input type="${f.type}" id="f-${f.id}" value="${f.def || ''}" placeholder="${f.hint || ''}" ${f.type==='number'?'inputmode="decimal"':''}>`;
+        
+        wrap.innerHTML = `<label>${f.label}</label>${input}`;
         container.appendChild(wrap);
     });
     const inputs = container.querySelectorAll('input, select');
@@ -382,7 +383,6 @@ async function saveGrid() {
     await updateOrder(o); resetForm(); renderGrids();
 }
 
-/* Исправление 2: Крупный шрифт для порога и ручки в Pliссе Smart */
 function renderGrids() {
     const container = document.getElementById('grids-list');
     container.innerHTML = "";
@@ -394,12 +394,9 @@ function renderGrids() {
             div.className = 'card grid-item';
             div.style.borderLeftColor = conf.color;
             let mainInfo = [];
-            
             conf.fields.forEach(f => { 
                 let exclude = ['note','sb','ov','og'];
-                // Если НЕ Smart, исключаем порог и ручку из крупного шрифта
                 if(g.type !== 'psm') exclude.push('por', 'hnd');
-                
                 if(!exclude.includes(f.id)) mainInfo.push(`${f.label}: ${g[f.id]}`); 
             });
 
@@ -408,7 +405,7 @@ function renderGrids() {
                 <div style="font-size:14px;">${mainInfo.join(' | ')}</div>
                 <div class="grid-meta-small">
                     ${g.sb ? `Сборка: ${g.sb}. ` : ''}${g.ov ? `Отв: В-${g.ov}/Г-${g.og}` : ''}
-                    ${g.note ? `<br><b>Прим:</b> ${g.note}` : ''}
+                    ${g.note ? `<br><b>Примечание:</b> ${g.note}` : ''}
                 </div>
                 <div class="grid-actions">
                     <button class="btn-icon" onclick="editGrid(${i})">✏</button>
@@ -469,7 +466,7 @@ function renderOrders() {
             const div = document.createElement('div');
             div.className = 'card order-row';
             div.onclick = () => openOrder(o.id);
-            div.innerHTML = `<div><strong>${o.cust.address}</strong><br><small>Сетки: Рм:${c.rm}, Вс:${c.vs}, ПSl:${c.psl}, ПSm:${c.psm}</small><br>${o.sent ? `<small style="color:var(--gray)">Отправлено: ${o.sent}</small>` : ''}</div><div style="font-size:20px; color:#ccc;">❯</div>`;
+            div.innerHTML = `<div><strong>${o.cust.address}</strong><br><small>Сетки: Рм:${c.rm}, Вс:${c.vs}, ПSl:${c.psl}, ПSm:${c.psm}</small><br>${o.sent ? `<small style="color:var(--gray); font-size: 10px;">Отправлено: ${o.sent}</small>` : ''}</div><div style="font-size:20px; color:#ccc;">❯</div>`;
             cont.appendChild(div);
             cursor.continue();
         }
@@ -488,8 +485,6 @@ async function deleteOrder() {
     vibe(150); goBack();
 }
 
-/* Исправление 1: Раздельные таблицы с новой структурой в экспорте */
-/* Исправленная функция exportData с вертикальными карточками для Копирования и Share */
 async function exportData(method) {
     const o = await getCurOrder();
     const u = await new Promise(r => {
@@ -499,51 +494,48 @@ async function exportData(method) {
     const email = document.getElementById('target-email').value;
     db.transaction("user", "readwrite").objectStore("user").put({id: "last_email", val: email});
 
-    let header = `МАСТЕР: ${u.n} (${u.p})\n`;
-    header += `ОБЪЕКТ: ${o.cust.address}\n`;
-    header += `КЛИЕНТ: ${o.cust.name} (${o.cust.phone})\n`;
-    header += `ДАТА: ${new Date().toLocaleDateString()}\n\n`;
+    let headerText = `МАСТЕР: ${u.n} (${u.p})\nОБЪЕКТ: ${o.cust.address}\nКЛИЕНТ: ${o.cust.name} (${o.cust.phone})\nДАТА: ${new Date().toLocaleDateString()}\n\n`;
     
     let finalMsg = "";
 
+    // Изменение 1: Экспорт Email через HTML таблицу
     if (method === 'email') {
-        // Оставляем старый табличный формат для Email
-        let msg = header;
+        let html = `<html><body style="font-family: Arial, sans-serif;">`;
+        html += `<h3>Заказ: ${o.cust.address}</h3>`;
+        html += `<p><b>Мастер:</b> ${u.n} (${u.p})<br><b>Клиент:</b> ${o.cust.name} (${o.cust.phone})</p>`;
+        
         const frameGrids = o.grids.filter(g => g.type === 'rm' || g.type === 'vs');
         const plisseGrids = o.grids.filter(g => g.type === 'psl' || g.type === 'psm');
 
-        if (frameGrids.length > 0) {
-            msg += `РАМОЧНЫЕ И ВСТАВНЫЕ СЕТКИ:\n`;
-            msg += `№  | Тип       | Ширина | Высота | Цвет      | Полотно    | Притвор | Примечание\n`;
-            msg += `---|-----------|--------|--------|-----------|------------|---------|-----------\n`;
-            frameGrids.forEach(g => {
-                const idx = o.grids.indexOf(g) + 1;
+        const createTable = (grids, title, cols) => {
+            if (!grids.length) return "";
+            let t = `<h4>${title}</h4><table border="1" style="border-collapse: collapse; width: 100%; font-size: 12px; text-align: left;">`;
+            t += `<tr style="background: #f2f2f2;">${cols.map(c => `<th>${c}</th>`).join('')}</tr>`;
+            grids.forEach((g, idx) => {
                 const conf = CONFIG[g.type];
-                msg += `${String(idx).padEnd(2)} | ${conf.name.padEnd(9)} | ${String(g.w).padEnd(6)} | ${String(g.h).padEnd(6)} | ${String(g.clr).padEnd(9)} | ${String(g.plt).padEnd(10)} | ${String(g.pr || '-').padEnd(7)} | ${g.note || ''}\n`;
+                t += `<tr>`;
+                t += `<td>${o.grids.indexOf(g) + 1}</td><td>${conf.name}</td><td>${g.w}</td><td>${g.h}</td><td>${g.clr}</td><td>${g.plt}</td>`;
+                if (title.includes("ПЛИССЕ")) {
+                    t += `<td>${g.dir || '-'}</td><td>${g.por || '-'}</td><td>${g.hnd || '-'}</td>`;
+                } else {
+                    t += `<td>${g.pr || '-'}</td>`;
+                }
+                t += `<td>${g.note || ''}</td></tr>`;
             });
-            msg += `\n`;
-        }
-        if (plisseGrids.length > 0) {
-            msg += `СЕТКИ ПЛИССЕ:\n`;
-            msg += `№  | Тип          | Ширина | Высота | Цвет      | Полотно    | Притвор | Закр. | Порог      | Ручка      | Примечание\n`;
-            msg += `---|--------------|--------|--------|-----------|------------|---------|-------|------------|------------|-----------\n`;
-            plisseGrids.forEach(g => {
-                const idx = o.grids.indexOf(g) + 1;
-                const conf = CONFIG[g.type];
-                msg += `${String(idx).padEnd(2)} | ${conf.name.padEnd(12)} | ${String(g.w).padEnd(6)} | ${String(g.h).padEnd(6)} | ${String(g.clr).padEnd(9)} | ${String(g.plt).padEnd(10)} | ${String(g.pr || '-').padEnd(7)} | ${String(g.dir || '-').padEnd(5)} | ${String(g.por || '-').padEnd(10)} | ${String(g.hnd || '-').padEnd(10)} | ${g.note || ''}\n`;
-            });
-        }
-        finalMsg = msg;
+            return t + `</table>`;
+        };
+
+        html += createTable(frameGrids, "РАМОЧНЫЕ И ВСТАВНЫЕ", ["№", "Тип", "Ш", "В", "Цвет", "Полотно", "Притвор", "Примечание"]);
+        html += createTable(plisseGrids, "СЕТКИ ПЛИССЕ", ["№", "Тип", "Ш", "В", "Цвет", "Полотно", "Закр.", "Порог", "Ручка", "Примечание"]);
+        html += `</body></html>`;
+        finalMsg = html;
     } else {
-        // ВАРИАНТ 1: Карточки изделия для Копирования и Share
-        let msg = header + `--- СПИСОК ИЗДЕЛИЙ ---\n\n`;
-        
+        let msg = headerText + `--- СПИСОК ИЗДЕЛИЙ ---\n\n`;
         o.grids.forEach((g, i) => {
             const conf = CONFIG[g.type];
             msg += `№${i + 1} [${conf.name.toUpperCase()}]\n`;
             msg += `Размеры: ${g.w} x ${g.h} мм\n`;
             msg += `Цвет: ${g.clr} | Полотно: ${g.plt}\n`;
-            
             if (g.pr && g.pr !== '0') msg += `Притвор: ${g.pr}\n`;
             if (g.dir) msg += `Закрывание: ${g.dir}\n`;
             if (g.por && g.por !== 'без') msg += `Порог: ${g.por}\n`;
@@ -551,7 +543,6 @@ async function exportData(method) {
             if (g.sb) msg += `Сборка: ${g.sb}\n`;
             if (g.ov && g.ov !== 'без') msg += `Отв. верт: ${g.ov} | Отв. гор: ${g.og}\n`;
             if (g.note) msg += `Примечание: ${g.note}\n`;
-            
             msg += `--------------------------\n`;
         });
         finalMsg = msg;
@@ -564,7 +555,8 @@ async function exportData(method) {
     }
 
     if(method === 'email') {
-        window.location.href = `mailto:${email}?subject=Замер_${o.cust.address}&body=${encodeURIComponent(finalMsg)}`;
+        // Примечание: mailto имеет ограничения по длине. Если сеток много, лучше использовать копирование.
+        window.location.href = `mailto:${email}?subject=Замер_${encodeURIComponent(o.cust.address)}&body=${encodeURIComponent(finalMsg)}`;
     } else if(method === 'share') {
         if(navigator.share) {
             navigator.share({ text: finalMsg }).catch(() => {});
@@ -576,6 +568,44 @@ async function exportData(method) {
 
     o.sent = new Date().toLocaleString();
     await updateOrder(o);
+}
+
+// Изменение 4: Функция скачивания CSV для 1С
+async function downloadCSV() {
+    const o = await getCurOrder();
+    if (!o.grids.length) { showToast("Список изделий пуст"); return; }
+    
+    // Формируем CSV с разделителем точка с запятой (стандарт для Excel/1C в РФ)
+    let csv = "\ufeff"; // BOM для корректного отображения кириллицы в Excel
+    csv += "№;Тип;Ширина;Высота;Цвет;Полотно;Притвор;Закрывание;Порог;Ручка;Примечание\n";
+    
+    o.grids.forEach((g, i) => {
+        const conf = CONFIG[g.type];
+        const row = [
+            i + 1,
+            conf.name,
+            g.w,
+            g.h,
+            g.clr,
+            g.plt,
+            g.pr || "0",
+            g.dir || "-",
+            g.por || "-",
+            g.hnd || "-",
+            (g.note || "").replace(/;/g, ",") // Заменяем ; в примечании, чтобы не ломать структуру
+        ];
+        csv += row.join(";") + "\n";
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${o.cust.address || 'Заказ'}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast("CSV сформирован");
 }
 
 function addToQueue(id) {
