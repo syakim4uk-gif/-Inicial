@@ -489,6 +489,7 @@ async function deleteOrder() {
 }
 
 /* Исправление 1: Раздельные таблицы с новой структурой в экспорте */
+/* Исправленная функция exportData с вертикальными карточками для Копирования и Share */
 async function exportData(method) {
     const o = await getCurOrder();
     const u = await new Promise(r => {
@@ -498,38 +499,63 @@ async function exportData(method) {
     const email = document.getElementById('target-email').value;
     db.transaction("user", "readwrite").objectStore("user").put({id: "last_email", val: email});
 
-    let msg = `МАСТЕР: ${u.n} (${u.p})\n`;
-    msg += `ОБЪЕКТ: ${o.cust.address}\n`;
-    msg += `КЛИЕНТ: ${o.cust.name} (${o.cust.phone})\n`;
-    msg += `ДАТА: ${new Date().toLocaleDateString()}\n\n`;
+    let header = `МАСТЕР: ${u.n} (${u.p})\n`;
+    header += `ОБЪЕКТ: ${o.cust.address}\n`;
+    header += `КЛИЕНТ: ${o.cust.name} (${o.cust.phone})\n`;
+    header += `ДАТА: ${new Date().toLocaleDateString()}\n\n`;
     
-    const frameGrids = o.grids.filter(g => g.type === 'rm' || g.type === 'vs');
-    const plisseGrids = o.grids.filter(g => g.type === 'psl' || g.type === 'psm');
+    let finalMsg = "";
 
-    if (frameGrids.length > 0) {
-        msg += `РАМОЧНЫЕ И ВСТАВНЫЕ СЕТКИ:\n`;
-        msg += `№  | Тип       | Ширина | Высота | Цвет      | Полотно    | Притвор | Примечание\n`;
-        msg += `---|-----------|--------|--------|-----------|------------|---------|-----------\n`;
-        frameGrids.forEach(g => {
-            const idx = o.grids.indexOf(g) + 1;
+    if (method === 'email') {
+        // Оставляем старый табличный формат для Email
+        let msg = header;
+        const frameGrids = o.grids.filter(g => g.type === 'rm' || g.type === 'vs');
+        const plisseGrids = o.grids.filter(g => g.type === 'psl' || g.type === 'psm');
+
+        if (frameGrids.length > 0) {
+            msg += `РАМОЧНЫЕ И ВСТАВНЫЕ СЕТКИ:\n`;
+            msg += `№  | Тип       | Ширина | Высота | Цвет      | Полотно    | Притвор | Примечание\n`;
+            msg += `---|-----------|--------|--------|-----------|------------|---------|-----------\n`;
+            frameGrids.forEach(g => {
+                const idx = o.grids.indexOf(g) + 1;
+                const conf = CONFIG[g.type];
+                msg += `${String(idx).padEnd(2)} | ${conf.name.padEnd(9)} | ${String(g.w).padEnd(6)} | ${String(g.h).padEnd(6)} | ${String(g.clr).padEnd(9)} | ${String(g.plt).padEnd(10)} | ${String(g.pr || '-').padEnd(7)} | ${g.note || ''}\n`;
+            });
+            msg += `\n`;
+        }
+        if (plisseGrids.length > 0) {
+            msg += `СЕТКИ ПЛИССЕ:\n`;
+            msg += `№  | Тип          | Ширина | Высота | Цвет      | Полотно    | Притвор | Закр. | Порог      | Ручка      | Примечание\n`;
+            msg += `---|--------------|--------|--------|-----------|------------|---------|-------|------------|------------|-----------\n`;
+            plisseGrids.forEach(g => {
+                const idx = o.grids.indexOf(g) + 1;
+                const conf = CONFIG[g.type];
+                msg += `${String(idx).padEnd(2)} | ${conf.name.padEnd(12)} | ${String(g.w).padEnd(6)} | ${String(g.h).padEnd(6)} | ${String(g.clr).padEnd(9)} | ${String(g.plt).padEnd(10)} | ${String(g.pr || '-').padEnd(7)} | ${String(g.dir || '-').padEnd(5)} | ${String(g.por || '-').padEnd(10)} | ${String(g.hnd || '-').padEnd(10)} | ${g.note || ''}\n`;
+            });
+        }
+        finalMsg = msg;
+    } else {
+        // ВАРИАНТ 1: Карточки изделия для Копирования и Share
+        let msg = header + `--- СПИСОК ИЗДЕЛИЙ ---\n\n`;
+        
+        o.grids.forEach((g, i) => {
             const conf = CONFIG[g.type];
-            msg += `${String(idx).padEnd(2)} | ${conf.name.padEnd(9)} | ${String(g.w).padEnd(6)} | ${String(g.h).padEnd(6)} | ${String(g.clr).padEnd(9)} | ${String(g.plt).padEnd(10)} | ${String(g.pr || '-').padEnd(7)} | ${g.note || ''}\n`;
+            msg += `№${i + 1} [${conf.name.toUpperCase()}]\n`;
+            msg += `Размеры: ${g.w} x ${g.h} мм\n`;
+            msg += `Цвет: ${g.clr} | Полотно: ${g.plt}\n`;
+            
+            if (g.pr && g.pr !== '0') msg += `Притвор: ${g.pr}\n`;
+            if (g.dir) msg += `Закрывание: ${g.dir}\n`;
+            if (g.por && g.por !== 'без') msg += `Порог: ${g.por}\n`;
+            if (g.hnd && g.hnd !== 'без') msg += `Ручка: ${g.hnd}\n`;
+            if (g.sb) msg += `Сборка: ${g.sb}\n`;
+            if (g.ov && g.ov !== 'без') msg += `Отв. верт: ${g.ov} | Отв. гор: ${g.og}\n`;
+            if (g.note) msg += `Примечание: ${g.note}\n`;
+            
+            msg += `--------------------------\n`;
         });
-        msg += `\n`;
+        finalMsg = msg;
     }
-
-    if (plisseGrids.length > 0) {
-        msg += `СЕТКИ ПЛИССЕ:\n`;
-        msg += `№  | Тип          | Ширина | Высота | Цвет      | Полотно    | Притвор | Закр. | Порог      | Ручка      | Примечание\n`;
-        msg += `---|--------------|--------|--------|-----------|------------|---------|-------|------------|------------|-----------\n`;
-        plisseGrids.forEach(g => {
-            const idx = o.grids.indexOf(g) + 1;
-            const conf = CONFIG[g.type];
-            msg += `${String(idx).padEnd(2)} | ${conf.name.padEnd(12)} | ${String(g.w).padEnd(6)} | ${String(g.h).padEnd(6)} | ${String(g.clr).padEnd(9)} | ${String(g.plt).padEnd(10)} | ${String(g.pr || '-').padEnd(7)} | ${String(g.dir || '-').padEnd(5)} | ${String(g.por || '-').padEnd(10)} | ${String(g.hnd || '-').padEnd(10)} | ${g.note || ''}\n`;
-        });
-    }
-
-    const finalMsg = msg;
 
     if(!navigator.onLine) {
         addToQueue(curOrderId);
