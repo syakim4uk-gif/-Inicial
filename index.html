@@ -98,13 +98,12 @@
 
         .grid-item {
             position: relative; border-left: 6px solid #ccc;
-            padding-right: 40px;
+            padding-bottom: 44px;
         }
 
         .grid-actions {
-            position: absolute; right: 8px; top: 50%;
-            transform: translateY(-50%);
-            display: flex; flex-direction: column; gap: 10px;
+            position: absolute; right: 8px; bottom: 8px;
+            display: flex; flex-direction: row; gap: 6px;
         }
 
         .btn-icon {
@@ -193,23 +192,27 @@
                 </div>
             </div>
 
-            <h4>Список изделий</h4>
+            <h4 id="grids-title">Список изделий</h4>
             <div id="grids-list"></div>
 
             <div class="card" style="margin-top:20px;">
-                <label>Почта для отправки</label>
-                <input type="email" id="target-email" style="margin-bottom:10px;">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <button class="btn btn-blue" onclick="exportData('email')">E-mail</button>
-                    <button class="btn btn-blue" onclick="exportData('share')">Поделиться</button>
-                </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
-                    <button class="btn btn-blue" onclick="exportData('copy')" style="background:#666;">Копировать</button>
-                    <button class="btn btn-blue" onclick="downloadCSV()" style="background:#4CAF50;">Скачать CSV</button>
-                </div>
+                <button class="btn btn-blue" onclick="showSummary()" style="margin-bottom:10px; background:#1976D2;">📋 ПРОВЕРИТЬ И ОТПРАВИТЬ</button>
+                <button class="btn btn-blue" onclick="exportData('copy')" style="background:#666;">Копировать текст заказа</button>
             </div>
             
-            <button class="btn btn-red" onclick="deleteOrder()" style="margin-top:20px;">УДАЛИТЬ ЗАКАЗ</button>
+            <div class="card" style="margin-top:20px; border: 1px solid #ff5252;">
+                <div style="font-size:12px; color:#ff5252; margin-bottom:8px; font-weight:bold;">⚠ ОПАСНАЯ ЗОНА</div>
+                <button class="btn btn-red" onclick="deleteOrder()">УДАЛИТЬ ЗАКАЗ</button>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="hidden">
+            <button onclick="closeSummary()" style="border:none; background:none; color:var(--primary); padding:10px 0; font-weight:bold;">← НАЗАД</button>
+            <h3 style="margin-top:0">Проверка заказа</h3>
+            <div class="card" id="summary-content" style="white-space: pre-wrap; font-size: 13px; font-family: monospace; line-height: 1.6;"></div>
+            <div class="card" style="margin-top:10px;">
+                <button class="btn btn-blue" onclick="sendFromSummary('share')">Отправить</button>
+            </div>
         </div>
 
         <div id="screen-profile" class="hidden">
@@ -222,6 +225,10 @@
                 <div class="input-wrap">
                     <label>Ваш Телефон</label>
                     <input type="tel" id="u-phone" placeholder="+7-___-___-__-__">
+                </div>
+                <div class="input-wrap">
+                    <label>Почта для отправки заказов</label>
+                    <input type="email" id="u-email" placeholder="example@mail.ru">
                 </div>
                 <button class="btn btn-blue" onclick="saveProfile()">СОХРАНИТЬ МАСТЕРА</button>
             </div>
@@ -300,7 +307,7 @@ function init() {
 }
 
 function nav(scr) {
-    document.querySelectorAll('.screen, #screen-list, #screen-order-edit, #screen-profile').forEach(s => s.classList.add('hidden'));
+    document.querySelectorAll('.screen, #screen-list, #screen-order-edit, #screen-profile, #screen-summary').forEach(s => s.classList.add('hidden'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if(scr === 'list') {
         document.getElementById('screen-list').classList.remove('hidden');
@@ -314,7 +321,7 @@ function nav(scr) {
 
 async function createOrder() {
     const tx = db.transaction("orders", "readwrite");
-    const newO = { cust: { address: "Новый заказ", name: "", phone: "", note: "" }, grids: [], sent: null };
+    const newO = { cust: { address: "Новый заказ", name: "", phone: "", note: "" }, grids: [], sent: null, createdAt: new Date().toLocaleString(), updatedAt: new Date().toLocaleString() };
     const reqO = tx.objectStore("orders").add(newO);
     reqO.onsuccess = () => openOrder(reqO.result);
 }
@@ -388,6 +395,7 @@ function renderGrids() {
     container.innerHTML = "";
     db.transaction("orders").objectStore("orders").get(curOrderId).onsuccess = e => {
         const o = e.target.result;
+        document.getElementById('grids-title').innerText = `Список изделий (${o.grids.length})`;
         o.grids.forEach((g, i) => {
             const conf = CONFIG[g.type];
             const div = document.createElement('div');
@@ -409,6 +417,7 @@ function renderGrids() {
                 </div>
                 <div class="grid-actions">
                     <button class="btn-icon" onclick="editGrid(${i})">✏</button>
+                    <button class="btn-icon" onclick="duplicateGrid(${i})" title="Ещё такую же">➕</button>
                     <button class="btn-icon" onclick="removeGrid(${i})">❌</button>
                 </div>
             `;
@@ -437,6 +446,33 @@ async function editGrid(idx) {
     card.scrollIntoView({behavior:'smooth'});
 }
 
+async function duplicateGrid(idx) {
+    const o = await getCurOrder();
+    const g = o.grids[idx];
+    // Заполняем форму всеми данными оригинала
+    document.getElementById('g-type').value = g.type;
+    renderForm();
+    CONFIG[g.type].fields.forEach(f => { document.getElementById(`f-${f.id}`).value = g[f.id]; });
+    // Очищаем поля размеров — пользователь вводит новые
+    document.getElementById('f-w').value = '';
+    document.getElementById('f-h').value = '';
+    // Снимаем режим редактирования — это будет НОВОЕ изделие
+    editIdx = null;
+    const card = document.getElementById('grid-form-card');
+    card.classList.add('editing-active');
+    document.getElementById('form-title').innerText = "Ещё такую же — введи размер";
+    document.getElementById('btn-add').innerText = "ДОБАВИТЬ";
+    if(!document.getElementById('btn-cancel')) {
+        const bc = document.createElement('button');
+        bc.id = 'btn-cancel'; bc.className = 'btn'; bc.style.marginTop = "5px";
+        bc.innerText = "ОТМЕНА"; bc.onclick = resetForm;
+        document.getElementById('form-buttons').appendChild(bc);
+    }
+    // Фокус на поле ширины
+    document.getElementById('f-w').focus();
+    card.scrollIntoView({behavior:'smooth'});
+}
+
 function resetForm() {
     editIdx = null;
     const card = document.getElementById('grid-form-card');
@@ -457,18 +493,24 @@ async function removeGrid(idx) {
 function renderOrders() {
     const cont = document.getElementById('orders-container');
     cont.innerHTML = "";
+    const allOrders = [];
     db.transaction("orders").objectStore("orders").openCursor().onsuccess = e => {
         const cursor = e.target.result;
         if(cursor) {
-            const o = cursor.value;
-            const c = { rm:0, vs:0, psl:0, psm:0 };
-            o.grids.forEach(g => c[g.type]++);
-            const div = document.createElement('div');
-            div.className = 'card order-row';
-            div.onclick = () => openOrder(o.id);
-            div.innerHTML = `<div><strong>${o.cust.address}</strong><br><small>Сетки: Рм:${c.rm}, Вс:${c.vs}, ПSl:${c.psl}, ПSm:${c.psm}</small><br>${o.sent ? `<small style="color:var(--gray); font-size: 10px;">Отправлено: ${o.sent}</small>` : ''}</div><div style="font-size:20px; color:#ccc;">❯</div>`;
-            cont.appendChild(div);
+            allOrders.push(cursor.value);
             cursor.continue();
+        } else {
+            allOrders.reverse();
+            allOrders.forEach(o => {
+                const c = { rm:0, vs:0, psl:0, psm:0 };
+                o.grids.forEach(g => c[g.type]++);
+                const div = document.createElement('div');
+                div.className = 'card order-row';
+                div.onclick = () => openOrder(o.id);
+                const dateStr = o.updatedAt ? `Изменён: ${o.updatedAt}` : (o.createdAt ? `Создан: ${o.createdAt}` : '');
+                div.innerHTML = `<div><strong>${o.cust.address}</strong><br><small>Сетки: Рм:${c.rm}, Вс:${c.vs}, ПSl:${c.psl}, ПSm:${c.psm}</small><br>${dateStr ? `<small style="color:var(--gray); font-size: 10px;">${dateStr}</small>` : ''}${o.sent ? `<br><small style="color:var(--gray); font-size: 10px;">Отправлено: ${o.sent}</small>` : ''}</div><div style="font-size:20px; color:#ccc;">❯</div>`;
+                cont.appendChild(div);
+            });
         }
     };
 }
@@ -476,6 +518,7 @@ function renderOrders() {
 async function saveOrderData() {
     const o = await getCurOrder();
     o.cust = { address: document.getElementById('c-address').value, name: document.getElementById('c-name').value, phone: document.getElementById('c-phone').value, note: document.getElementById('c-note').value };
+    o.updatedAt = new Date().toLocaleString();
     await updateOrder(o);
 }
 
@@ -565,6 +608,50 @@ async function exportData(method) {
     await updateOrder(o);
 }
 
+async function showSummary() {
+    const o = await getCurOrder();
+    if (!o.grids.length) { showToast("Список изделий пуст"); return; }
+    const u = await new Promise(r => {
+        db.transaction("user").objectStore("user").get("master").onsuccess = e => r(e.target.result || {n:'', p:''});
+    });
+    let text = `МАСТЕР: ${u.n} (${u.p})\nОБЪЕКТ: ${o.cust.address}\nКЛИЕНТ: ${o.cust.name} (${o.cust.phone})\nДАТА: ${new Date().toLocaleDateString()}${o.cust.note ? '\nПРИМЕЧАНИЕ: ' + o.cust.note : ''}\n\n--- СПИСОК ИЗДЕЛИЙ (${o.grids.length} шт.) ---\n\n`;
+    o.grids.forEach((g, i) => {
+        const conf = CONFIG[g.type];
+        text += `№${i + 1} [${conf.name.toUpperCase()}]\n`;
+        text += `Размеры: ${g.w} x ${g.h} мм\n`;
+        text += `Цвет: ${g.clr} | Полотно: ${g.plt}\n`;
+        if (g.pr && g.pr !== '0') text += `Притвор: ${g.pr}\n`;
+        if (g.dir) text += `Закрывание: ${g.dir}\n`;
+        if (g.por && g.por !== 'без') text += `Порог: ${g.por}\n`;
+        if (g.hnd && g.hnd !== 'без') text += `Ручка: ${g.hnd}\n`;
+        if (g.sb) text += `Сборка: ${g.sb}\n`;
+        if (g.ov && g.ov !== 'без') text += `Отв. верт: ${g.ov} | Отв. гор: ${g.og}\n`;
+        if (g.note) text += `Примечание: ${g.note}\n`;
+        text += `--------------------------\n`;
+    });
+    document.getElementById('summary-content').innerText = text;
+    document.querySelectorAll('#screen-list, #screen-order-edit, #screen-profile').forEach(s => s.classList.add('hidden'));
+    document.getElementById('screen-summary').classList.remove('hidden');
+}
+
+function closeSummary() {
+    document.getElementById('screen-summary').classList.add('hidden');
+    document.getElementById('screen-order-edit').classList.remove('hidden');
+}
+
+async function sendFromSummary(method) {
+    const text = document.getElementById('summary-content').innerText;
+    const o = await getCurOrder();
+    if (navigator.share) {
+        navigator.share({ text }).catch(() => {});
+    } else {
+        showToast("Поделиться недоступно в этом браузере. Попробуйте Edge или Chrome.");
+        return;
+    }
+    o.sent = new Date().toLocaleString();
+    await updateOrder(o);
+}
+
 async function downloadCSV() {
     const o = await getCurOrder();
     if (!o.grids.length) { showToast("Список изделий пуст"); return; }
@@ -634,7 +721,7 @@ function applyMask(el) {
 }
 
 function saveProfile() {
-    const u = { id: "master", n: document.getElementById('u-name').value, p: document.getElementById('u-phone').value };
+    const u = { id: "master", n: document.getElementById('u-name').value, p: document.getElementById('u-phone').value, e: document.getElementById('u-email').value };
     db.transaction("user", "readwrite").objectStore("user").put(u);
     showToast("Профиль сохранен");
 }
@@ -644,6 +731,7 @@ function loadUser() {
         if(e.target.result) {
             document.getElementById('u-name').value = e.target.result.n;
             document.getElementById('u-phone').value = e.target.result.p;
+            if(e.target.result.e) document.getElementById('u-email').value = e.target.result.e;
         }
     };
 }
