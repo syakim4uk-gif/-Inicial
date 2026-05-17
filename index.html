@@ -89,22 +89,37 @@
             width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;
             font-size: 16px; background: #fff;
         }
+        
+        textarea {
+            resize: vertical;
+        }
+        
+        input::placeholder, textarea::placeholder {
+            font-size: 12px;
+        }
 
         .field-hint { display: none; }
 
         .order-row {
             display: flex; justify-content: space-between; align-items: center;
             border-left: 4px solid var(--primary);
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+        }
+        
+        .order-row.active {
+            background: #e3f2fd !important;
         }
 
         .grid-item {
             position: relative; border-left: 6px solid #ccc;
-            padding-bottom: 44px;
+            padding-bottom: 12px;
         }
 
         .grid-actions {
-            position: absolute; right: 8px; bottom: 8px;
+            margin-top: 12px;
             display: flex; flex-direction: row; gap: 6px;
+            justify-content: flex-end;
         }
 
         .btn-icon {
@@ -129,15 +144,164 @@
 
         .editing-active { background: #fff9c4 !important; }
         .hidden { display: none !important; }
+        
+        /* Плавное сворачивание полей */
+        #cust-fields {
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            max-height: 1000px;
+            opacity: 1;
+        }
+        
+        #cust-fields.collapsing {
+            max-height: 0;
+            opacity: 0;
+        }
         #offline-notice { background: #ffa000; color: white; text-align: center; padding: 5px; font-size: 12px; display: none; }
+
+        /* Desktop layout для экранов >= 900px */
+        @media (min-width: 900px) {
+            body, html { overflow: auto; }
+            
+            .app-wrapper {
+                flex-direction: row;
+                height: auto;
+                min-height: 100vh;
+            }
+            
+            /* Левая колонка */
+            #desktop-left {
+                width: 380px;
+                flex-shrink: 0;
+                border-right: 1px solid #ddd;
+                background: #fff;
+                position: sticky;
+                top: 0;
+                height: 100vh;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+            }
+            
+            /* Табы в левой колонке */
+            #desktop-tabs {
+                display: flex;
+                border-bottom: 1px solid #ddd;
+                background: #fff;
+            }
+            
+            .desktop-tab {
+                flex: 1;
+                padding: 16px;
+                text-align: center;
+                font-weight: bold;
+                font-size: 14px;
+                color: var(--gray);
+                cursor: pointer;
+                border-bottom: 3px solid transparent;
+            }
+            
+            .desktop-tab.active {
+                color: var(--primary);
+                border-bottom-color: var(--primary);
+            }
+            
+            /* Контент левой колонки */
+            #desktop-left-content {
+                flex: 1;
+                overflow-y: auto;
+                padding: 20px 16px;
+            }
+            
+            /* Правая колонка */
+            #desktop-right {
+                flex: 1;
+                background: var(--bg);
+                min-height: 100vh;
+                position: relative;
+            }
+            
+            /* Растягиваем контент внутри правой области */
+            #desktop-left-col .card, #desktop-right-col .card {
+                padding: 20px;
+            }
+            
+            #desktop-left-col input, #desktop-left-col select, #desktop-left-col textarea,
+            #desktop-right-col input, #desktop-right-col select, #desktop-right-col textarea {
+                width: 100%;
+                padding: 14px;
+                font-size: 16px;
+            }
+            
+            #desktop-left-col, #desktop-right-col {
+                min-width: 0;
+            }
+            
+            /* Контейнер для правых экранов */
+            .main-content {
+                padding: 0;
+                overflow: visible;
+            }
+            
+            /* Правые экраны — только для мобильных */
+            #screen-order-edit, #screen-summary {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+            
+            /* Desktop placeholder — без ограничений */
+            #desktop-placeholder {
+                display: flex !important;
+                width: 100%;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                color: var(--gray);
+                font-size: 16px;
+            }
+            
+            /* Прячем мобильную навигацию */
+            .nav-bar { display: none; }
+            
+            /* Прячем мобильный контент полностью */
+            .main-content, #screen-list, #screen-profile { display: none !important; }
+        }
+        
+        /* На мобильных прячем desktop элементы */
+        @media (max-width: 899px) {
+            #desktop-left, #desktop-right { display: none !important; }
+        }
     </style>
 </head>
 <body>
 
 <div class="app-wrapper">
+    <!-- Desktop: левая колонка -->
+    <div id="desktop-left">
+        <div id="desktop-tabs">
+            <div class="desktop-tab active" id="dtab-orders" onclick="switchDesktopTab('orders')">ЗАКАЗЫ</div>
+            <div class="desktop-tab" id="dtab-profile" onclick="switchDesktopTab('profile')">ПРОФИЛЬ</div>
+        </div>
+        <div id="desktop-left-content">
+            <!-- Сюда рендерится либо список заказов, либо профиль -->
+        </div>
+    </div>
+    
+    <!-- Desktop: правая колонка -->
+    <div id="desktop-right">
+        <div id="desktop-placeholder">
+            <div style="text-align:center;">
+                <div style="font-size:48px; margin-bottom:12px;">📋</div>
+                <div>Выберите заказ из списка слева</div>
+            </div>
+        </div>
+    </div>
+    
     <div id="offline-notice">Нет связи. Сообщения уйдут автоматически при появлении сети.</div>
     
     <div class="main-content">
+        <!-- Мобильная версия -->
         <div id="screen-list">
             <h3 style="margin-top:0">Мои Заказы</h3>
             <div id="orders-container"></div>
@@ -145,12 +309,12 @@
         </div>
 
         <div id="screen-order-edit" class="hidden">
-            <button onclick="goBack()" style="border:none; background:none; color:var(--primary); padding:10px 0; font-weight:bold;">← К СПИСКУ</button>
+            <button onclick="goBack()" style="border:none; background:none; color:var(--primary); padding:10px 0; font-weight:bold; font-size:115%;">← К списку заказов</button>
             
             <div class="card" id="customer-card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <h4 style="margin:0">Заказчик</h4>
-                    <button id="toggle-cust" onclick="toggleCust()">▲</button>
+                    <h4 style="margin:0">Объект</h4>
+                    <button id="toggle-cust" onclick="toggleCust(event)" style="border:none; background:none; color:var(--primary); cursor:pointer; font-size:13px; padding:0;">Свернуть поля</button>
                 </div>
                 <div id="cust-fields">
                     <div class="input-wrap">
@@ -215,6 +379,8 @@
                 <button class="btn btn-blue" onclick="copyOrderText()" style="background:#666;">Копировать текст заказа</button>
             </div>
         </div>
+    </div>
+    <!-- /main-content мобильная версия -->
 
         <div id="screen-profile" class="hidden">
             <h3>Профиль</h3>
@@ -244,7 +410,7 @@
 const CONFIG = {
     rm: { name: "Рамочная", pref: "Рм", color: "var(--rm-color)", fields: [
         { id: "w", label: "Ширина, мм", type: "number", hint: "световой проем", req: true },
-        { id: "h", label: "Высота", type: "number", hint: "световой проем", req: true },
+        { id: "h", label: "Высота, мм", type: "number", hint: "световой проем", req: true },
         { id: "pr", label: "Притвор", type: "number", req: true },
         { id: "clr", label: "Цвет", type: "select", options: ["белый", "антрацит", "коричневый", "золотой дуб", "махагон", "сосна", "черно-коричневый", "на заказ"], req: true },
         { id: "plt", label: "Полотно", type: "select", options: ["стандарт", "антиМошка", "антиКошка", "ультра вью", "антиПыль", "алюминиевая"], req: true },
@@ -269,8 +435,8 @@ const CONFIG = {
         { id: "note", label: "Примечание", type: "text", full: true }
     ]},
     psm: { name: "Плиссе Smart", pref: "ПSm", color: "var(--psm-color)", fields: [
-        { id: "w", label: "Ширина", type: "number", hint: "размер изделия", req: true },
-        { id: "h", label: "Высота", type: "number", hint: "размер изделия", req: true },
+        { id: "w", label: "Ширина, мм", type: "number", hint: "размер изделия", req: true },
+        { id: "h", label: "Высота, мм", type: "number", hint: "размер изделия", req: true },
         { id: "dir", label: "Закрывание", type: "select", options: ["<--", "-->", "⬇", "⬆", "--> <--"], hint: "направление закрывания", req: true },
         { id: "por", label: "Порог", type: "select", options: ["без", "тонкий анод.", "тонкий окраш."], hint: "если окраш. - цвет в примечании", req: true },
         { id: "hnd", label: "Ручка", type: "select", options: ["без", "снаружи", "внутри", "снаружи+внутри"], req: true },
@@ -293,6 +459,7 @@ requestDB.onupgradeneeded = e => {
 requestDB.onsuccess = e => { db = e.target.result; init(); };
 
 function init() {
+    initDesktop();
     loadUser(); renderOrders();
     applyMask(document.getElementById('c-phone'));
     applyMask(document.getElementById('u-phone'));
@@ -327,10 +494,14 @@ function openOrder(id) {
     curOrderId = id;
     db.transaction("orders").objectStore("orders").get(id).onsuccess = e => {
         const o = e.target.result;
-        document.getElementById('c-address').value = o.cust.address;
-        document.getElementById('c-name').value = o.cust.name;
-        document.getElementById('c-phone').value = o.cust.phone;
-        document.getElementById('c-note').value = o.cust.note;
+        const addrMobile = document.getElementById('c-address');
+        const nameMobile = document.getElementById('c-name');
+        const phoneMobile = document.getElementById('c-phone');
+        const noteMobile = document.getElementById('c-note');
+        if(addrMobile) addrMobile.value = o.cust.address;
+        if(nameMobile) nameMobile.value = o.cust.name;
+        if(phoneMobile) phoneMobile.value = o.cust.phone;
+        if(noteMobile) noteMobile.value = o.cust.note;
         document.getElementById('screen-list').classList.add('hidden');
         document.getElementById('screen-order-edit').classList.remove('hidden');
         renderGrids(); renderForm();
@@ -369,15 +540,25 @@ function renderForm() {
 }
 
 async function saveGrid() {
-    const type = document.getElementById('g-type').value;
+    const typeEl = document.getElementById('g-type');
+    if(!typeEl) return;
+    const type = typeEl.value;
     const data = { type: type };
     let valid = true;
+    let missingFields = [];
     CONFIG[type].fields.forEach(f => {
-        const val = document.getElementById(`f-${f.id}`).value;
-        if(f.req && !val) valid = false;
+        const fieldEl = document.getElementById(`f-${f.id}`);
+        const val = fieldEl ? fieldEl.value.trim() : '';
+        if(f.req && val === '') {
+            valid = false;
+            missingFields.push(f.label);
+        }
         data[f.id] = val;
     });
-    if(!valid) { alert("Заполни обязательные поля!"); return; }
+    if(!valid) { 
+        alert("Заполните обязательные поля:\n\n" + missingFields.join("\n")); 
+        return; 
+    }
     const o = await getCurOrder();
     if(editIdx !== null) {
         o.grids[editIdx] = data; editIdx = null; showToast("Сохранено"); vibe(50);
@@ -388,11 +569,13 @@ async function saveGrid() {
 }
 
 function renderGrids() {
-    const container = document.getElementById('grids-list');
+    // Определяем desktop или mobile контейнер
+    const container = document.getElementById('desktop-grids-list') || document.getElementById('grids-list');
+    if(!container) return;
     container.innerHTML = "";
     db.transaction("orders").objectStore("orders").get(curOrderId).onsuccess = e => {
         const o = e.target.result;
-        document.getElementById('grids-title').innerText = `Список изделий (${o.grids.length})`;
+        document.getElementById('grids-title').innerText = `Список изделий (${o.grids.length} шт)`;
         o.grids.forEach((g, i) => {
             const conf = CONFIG[g.type];
             const div = document.createElement('div');
@@ -427,9 +610,13 @@ async function editGrid(idx) {
     editIdx = idx;
     const o = await getCurOrder();
     const g = o.grids[idx];
-    document.getElementById('g-type').value = g.type;
+    const typeSelect = document.getElementById('g-type');
+    if(typeSelect) typeSelect.value = g.type;
     renderForm();
-    CONFIG[g.type].fields.forEach(f => { document.getElementById(`f-${f.id}`).value = g[f.id]; });
+    CONFIG[g.type].fields.forEach(f => { 
+        const field = document.getElementById(`f-${f.id}`);
+        if(field) field.value = g[f.id];
+    });
     const card = document.getElementById('grid-form-card');
     card.classList.add('editing-active');
     document.getElementById('form-title').innerText = "Редактирование " + (idx+1);
@@ -447,12 +634,18 @@ async function duplicateGrid(idx) {
     const o = await getCurOrder();
     const g = o.grids[idx];
     // Заполняем форму всеми данными оригинала
-    document.getElementById('g-type').value = g.type;
+    const typeSelectDup = document.getElementById('g-type');
+    if(typeSelectDup) typeSelectDup.value = g.type;
     renderForm();
-    CONFIG[g.type].fields.forEach(f => { document.getElementById(`f-${f.id}`).value = g[f.id]; });
+    CONFIG[g.type].fields.forEach(f => { 
+        const fieldDup = document.getElementById(`f-${f.id}`);
+        if(fieldDup) fieldDup.value = g[f.id];
+    });
     // Очищаем поля размеров — пользователь вводит новые
-    document.getElementById('f-w').value = '';
-    document.getElementById('f-h').value = '';
+    const wField = document.getElementById('f-w');
+    const hField = document.getElementById('f-h');
+    if(wField) wField.value = '';
+    if(hField) hField.value = '';
     // Снимаем режим редактирования — это будет НОВОЕ изделие
     editIdx = null;
     const card = document.getElementById('grid-form-card');
@@ -512,9 +705,24 @@ function renderOrders() {
     };
 }
 
+function validatePhone(phone) {
+    // Убираем все нецифровые символы
+    const digits = phone.replace(/\D/g, '');
+    // Проверяем что ровно 11 цифр (для России)
+    return digits.length === 11;
+}
+
 async function saveOrderData() {
     const o = await getCurOrder();
-    o.cust = { address: document.getElementById('c-address').value, name: document.getElementById('c-name').value, phone: document.getElementById('c-phone').value, note: document.getElementById('c-note').value };
+    const phoneValue = document.getElementById('c-phone').value;
+    
+    // Проверяем телефон если он заполнен
+    if(phoneValue && !validatePhone(phoneValue)) {
+        alert("Номер телефона введён некорректно. Должно быть 11 цифр.");
+        return;
+    }
+    
+    o.cust = { address: document.getElementById('c-address').value, name: document.getElementById('c-name').value, phone: phoneValue, note: document.getElementById('c-note').value };
     o.updatedAt = new Date().toLocaleString();
     await updateOrder(o);
 }
@@ -611,7 +819,7 @@ async function showSummary() {
     const u = await new Promise(r => {
         db.transaction("user").objectStore("user").get("master").onsuccess = e => r(e.target.result || {n:'', p:''});
     });
-    let text = `МАСТЕР: ${u.n} (${u.p})\nОБЪЕКТ: ${o.cust.address}\nКЛИЕНТ: ${o.cust.name} (${o.cust.phone})\nДАТА: ${new Date().toLocaleDateString()}${o.cust.note ? '\nПРИМЕЧАНИЕ: ' + o.cust.note : ''}\n\n--- СПИСОК ИЗДЕЛИЙ (${o.grids.length} шт.) ---\n\n`;
+    let text = `ДАТА: ${new Date().toLocaleDateString()}\nМАСТЕР: ${u.n} (${u.p})\nОБЪЕКТ: ${o.cust.address}\nКЛИЕНТ: ${o.cust.name} (${o.cust.phone})${o.cust.note ? '\nПРИМЕЧАНИЕ: ' + o.cust.note : ''}\n\n--- СПИСОК ИЗДЕЛИЙ (${o.grids.length} шт.) ---\n\n`;
     o.grids.forEach((g, i) => {
         const conf = CONFIG[g.type];
         text += `№${i + 1} [${conf.name.toUpperCase()}]\n`;
@@ -626,9 +834,43 @@ async function showSummary() {
         if (g.note) text += `Примечание: ${g.note}\n`;
         text += `--------------------------\n`;
     });
-    document.getElementById('summary-content').innerText = text;
-    document.querySelectorAll('#screen-list, #screen-order-edit, #screen-profile').forEach(s => s.classList.add('hidden'));
-    document.getElementById('screen-summary').classList.remove('hidden');
+    
+    // Desktop: показываем в правой области
+    if(window.innerWidth >= 900) {
+        showSummaryDesktop(text);
+    } else {
+        // Mobile: как раньше
+        document.getElementById('summary-content').innerText = text;
+        document.querySelectorAll('#screen-list, #screen-order-edit, #screen-profile').forEach(s => s.classList.add('hidden'));
+        document.getElementById('screen-summary').classList.remove('hidden');
+    }
+}
+
+function showSummaryDesktop(text) {
+    const rightCol = document.getElementById('desktop-right');
+    rightCol.innerHTML = `
+        <div style="width:100%; padding:20px; max-width:1200px; margin:0 auto;">
+            <button onclick="reopenCurrentOrder()" style="border:none; background:none; color:var(--primary); padding:10px 0; font-weight:bold; cursor:pointer; margin-bottom:16px;">← НАЗАД</button>
+            <h3 style="margin-top:0">Проверка заказа</h3>
+            <div class="card" style="white-space: pre-wrap; font-size: 13px; font-family: monospace; line-height: 1.6;">${text}</div>
+            <div class="card" style="margin-top:10px;">
+                <button class="btn btn-blue" onclick="sendFromSummary('share')" style="margin-bottom:8px;">Отправить</button>
+                <button class="btn btn-blue" onclick="copyOrderTextDesktop('${text.replace(/'/g, "\'")})" style="background:#666;">Копировать текст заказа</button>
+            </div>
+        </div>
+    `;
+}
+
+function reopenCurrentOrder() {
+    if(curOrderId) openOrderDesktop(curOrderId);
+}
+
+function copyOrderTextDesktop(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast("Скопировано");
+    }).catch(() => {
+        showToast("Не удалось скопировать");
+    });
 }
 
 function closeSummary() {
@@ -735,20 +977,208 @@ function saveProfile() {
 function loadUser() {
     db.transaction("user").objectStore("user").get("master").onsuccess = e => {
         if(e.target.result) {
-            document.getElementById('u-name').value = e.target.result.n;
-            document.getElementById('u-phone').value = e.target.result.p;
-            if(e.target.result.e) document.getElementById('u-email').value = e.target.result.e;
+            const uName = document.getElementById('u-name');
+            const uPhone = document.getElementById('u-phone');
+            const uEmail = document.getElementById('u-email');
+            if(uName) uName.value = e.target.result.n;
+            if(uPhone) uPhone.value = e.target.result.p;
+            if(uEmail && e.target.result.e) uEmail.value = e.target.result.e;
         }
     };
 }
 
 function getCurOrder() { return new Promise(r => { db.transaction("orders").objectStore("orders").get(curOrderId).onsuccess = e => r(e.target.result); }); }
+
+// Desktop functions
+function switchDesktopTab(tab) {
+    document.querySelectorAll('.desktop-tab').forEach(t => t.classList.remove('active'));
+    const leftContent = document.getElementById('desktop-left-content');
+    
+    if(tab === 'orders') {
+        document.getElementById('dtab-orders').classList.add('active');
+        renderDesktopOrders();
+    } else if(tab === 'profile') {
+        document.getElementById('dtab-profile').classList.add('active');
+        renderDesktopProfile();
+    }
+}
+
+function renderDesktopOrders() {
+    const container = document.getElementById('desktop-left-content');
+    container.innerHTML = '<h3 style="margin-top:0">Мои Заказы</h3><div id="desktop-orders-container"></div><button class="btn btn-blue" onclick="createOrderDesktop()" style="margin-top:10px;">+ НОВЫЙ ЗАКАЗ</button>';
+    
+    const ordersContainer = document.getElementById('desktop-orders-container');
+    ordersContainer.innerHTML = "";
+    const allOrders = [];
+    
+    db.transaction("orders").objectStore("orders").openCursor().onsuccess = e => {
+        const cursor = e.target.result;
+        if(cursor) {
+            allOrders.push(cursor.value);
+            cursor.continue();
+        } else {
+            allOrders.reverse();
+            allOrders.forEach(o => {
+                const c = { rm:0, vs:0, psl:0, psm:0 };
+                o.grids.forEach(g => c[g.type]++);
+                const div = document.createElement('div');
+                div.className = 'card order-row';
+                div.onclick = () => openOrderDesktop(o.id);
+                if(curOrderId === o.id) div.classList.add('active');
+                const dateStr = o.updatedAt ? `Изменён: ${o.updatedAt}` : (o.createdAt ? `Создан: ${o.createdAt}` : '');
+                div.innerHTML = `<div><strong>${o.cust.address}</strong><br><small>Сетки: Рм:${c.rm}, Вс:${c.vs}, ПSl:${c.psl}, ПSm:${c.psm}</small><br>${dateStr ? `<small style="color:var(--gray); font-size: 10px;">${dateStr}</small>` : ''}${o.sent ? `<br><small style="color:var(--gray); font-size: 10px;">Отправлено: ${o.sent}</small>` : ''}</div><div style="font-size:20px; color:#ccc;">❯</div>`;
+                ordersContainer.appendChild(div);
+            });
+        }
+    };
+}
+
+function renderDesktopProfile() {
+    const container = document.getElementById('desktop-left-content');
+    container.innerHTML = `
+        <h3 style="margin-top:0">Профиль</h3>
+        <div class="card">
+            <div class="input-wrap">
+                <label>Ваше Имя</label>
+                <input type="text" id="du-name">
+            </div>
+            <div class="input-wrap">
+                <label>Ваш Телефон</label>
+                <input type="tel" id="du-phone" placeholder="+7-___-___-__-__">
+            </div>
+            <button class="btn btn-blue" onclick="saveDesktopProfile()">СОХРАНИТЬ МАСТЕРА</button>
+        </div>
+    `;
+    
+    db.transaction("user").objectStore("user").get("master").onsuccess = e => {
+        if(e.target.result) {
+            const duName = document.getElementById('du-name');
+            const duPhone = document.getElementById('du-phone');
+            if(duName) duName.value = e.target.result.n;
+            if(duPhone) duPhone.value = e.target.result.p;
+        }
+    };
+    applyMask(document.getElementById('du-phone'));
+}
+
+function saveDesktopProfile() {
+    const u = { id: "master", n: document.getElementById('du-name').value, p: document.getElementById('du-phone').value };
+    db.transaction("user", "readwrite").objectStore("user").put(u);
+    showToast("Профиль сохранен");
+}
+
+function createOrderDesktop() {
+    const tx = db.transaction("orders", "readwrite");
+    const newO = { cust: { address: "Новый заказ", name: "", phone: "", note: "" }, grids: [], sent: null, createdAt: new Date().toLocaleString(), updatedAt: new Date().toLocaleString() };
+    const reqO = tx.objectStore("orders").add(newO);
+    reqO.onsuccess = () => openOrderDesktop(reqO.result);
+}
+
+function openOrderDesktop(id) {
+    curOrderId = id;
+    renderDesktopOrders(); // Обновляем список чтобы показать активный
+    db.transaction("orders").objectStore("orders").get(id).onsuccess = e => {
+        const o = e.target.result;
+        
+        // Клонируем содержимое мобильного экрана
+        const mobileEditor = document.getElementById('screen-order-edit');
+        const rightCol = document.getElementById('desktop-right');
+        
+        rightCol.innerHTML = `
+            <div id="desktop-order-content" style="width:100%; padding:20px; opacity:0; transition:opacity 0.2s;">
+                <button onclick="closeOrderDesktop()" style="border:none; background:none; color:var(--primary); padding:10px 0; font-weight:bold; cursor:pointer; margin-bottom:16px; font-size:115%;">← К списку заказов</button>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:40px; margin-bottom:20px;">
+                    <!-- Левая колонка -->
+                    <div id="desktop-left-col"></div>
+                    
+                    <!-- Правая колонка -->
+                    <div id="desktop-right-col"></div>
+                </div>
+                
+                <!-- Кнопки внизу по центру -->
+                <div id="desktop-bottom-actions" style="max-width:600px; margin:0 auto;"></div>
+            </div>
+        `;
+        
+        // Заполняем левую колонку: блок заказчика + форма
+        const leftCol = document.getElementById('desktop-left-col');
+        const customerCard = mobileEditor.querySelector('#customer-card');
+        const formCard = mobileEditor.querySelector('#grid-form-card');
+        
+        // Клонируем глубоко чтобы сохранить все элементы
+        leftCol.innerHTML = '';
+        if(customerCard) leftCol.appendChild(customerCard.cloneNode(true));
+        if(formCard) leftCol.appendChild(formCard.cloneNode(true));
+        
+        // Заполняем правую колонку: список изделий
+        const rightCol_inner = document.getElementById('desktop-right-col');
+        rightCol_inner.innerHTML = '<h4 id="desktop-grids-title">Список изделий</h4><div id="desktop-grids-list"></div>';
+        
+        // Заполняем нижние кнопки
+        const bottomActions = document.getElementById('desktop-bottom-actions');
+        const exportCard = mobileEditor.querySelectorAll('.card')[mobileEditor.querySelectorAll('.card').length - 2];
+        const dangerCard = mobileEditor.querySelectorAll('.card')[mobileEditor.querySelectorAll('.card').length - 1];
+        bottomActions.innerHTML = exportCard.outerHTML + dangerCard.outerHTML;
+        
+        // Даём DOM время отрисоваться, затем заполняем поля
+        setTimeout(() => {
+            const addrEl = document.getElementById('c-address');
+            const nameEl = document.getElementById('c-name');
+            const phoneEl = document.getElementById('c-phone');
+            const noteEl = document.getElementById('c-note');
+            
+            if(addrEl) addrEl.value = o.cust.address;
+            if(nameEl) nameEl.value = o.cust.name;
+            if(phoneEl) phoneEl.value = o.cust.phone;
+            if(noteEl) noteEl.value = o.cust.note;
+            
+            renderGrids();
+            renderForm();
+            
+            ['c-address', 'c-name', 'c-phone', 'c-note'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.onchange = () => saveOrderData();
+            });
+            if(phoneEl) applyMask(phoneEl);
+            
+            // Показываем контент после загрузки
+            const orderContent = document.getElementById('desktop-order-content');
+            if(orderContent) orderContent.style.opacity = '1';
+        }, 20);
+    };
+}
+
+function closeOrderDesktop() {
+    document.getElementById('desktop-right').innerHTML = `
+        <div id="desktop-placeholder" style="display:flex !important; align-items:center; justify-content:center; min-height:100vh; color:var(--gray); font-size:16px;">
+            <div style="text-align:center;">
+                <div style="font-size:48px; margin-bottom:12px;">📋</div>
+                <div>Выберите заказ из списка слева</div>
+            </div>
+        </div>
+    `;
+}
+
+function initDesktop() {
+    if(window.innerWidth >= 900) {
+        renderDesktopOrders();
+    }
+}
 function updateOrder(o) { return new Promise(r => { const tx = db.transaction("orders", "readwrite"); tx.objectStore("orders").put(o).onsuccess = () => r(); }); }
-function toggleCust() {
-    const f = document.getElementById('cust-fields');
-    const b = document.getElementById('toggle-cust');
-    if(f.classList.contains('hidden')) { f.classList.remove('hidden'); b.innerText = "▲"; } 
-    else { f.classList.add('hidden'); b.innerText = "▼"; }
+function toggleCust(event) {
+    // Находим кнопку и поля относительно карточки
+    const button = event ? event.target : document.getElementById('toggle-cust');
+    const card = button.closest('.card');
+    const fields = card.querySelector('#cust-fields');
+    
+    if(fields.classList.contains('collapsing')) { 
+        fields.classList.remove('collapsing'); 
+        button.innerText = "Свернуть поля"; 
+    } else { 
+        fields.classList.add('collapsing'); 
+        button.innerText = "Развернуть поля"; 
+    }
 }
 </script>
 </body>
