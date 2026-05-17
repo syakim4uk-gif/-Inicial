@@ -60,6 +60,7 @@
             font-weight: bold;
             color: var(--gray);
             font-size: 14px;
+            cursor: pointer;
         }
 
         .nav-item.active { color: var(--primary); }
@@ -196,8 +197,7 @@
             <div id="grids-list"></div>
 
             <div class="card" style="margin-top:20px;">
-                <button class="btn btn-blue" onclick="showSummary()" style="margin-bottom:10px; background:#1976D2;">📋 ПРОВЕРИТЬ И ОТПРАВИТЬ</button>
-                <button class="btn btn-blue" onclick="exportData('copy')" style="background:#666;">Копировать текст заказа</button>
+                <button class="btn btn-blue" onclick="showSummary()" style="background:#1976D2;">📋 ПРОВЕРИТЬ И ОТПРАВИТЬ</button>
             </div>
             
             <div class="card" style="margin-top:20px; border: 1px solid #ff5252;">
@@ -211,7 +211,8 @@
             <h3 style="margin-top:0">Проверка заказа</h3>
             <div class="card" id="summary-content" style="white-space: pre-wrap; font-size: 13px; font-family: monospace; line-height: 1.6;"></div>
             <div class="card" style="margin-top:10px;">
-                <button class="btn btn-blue" onclick="sendFromSummary('share')">Отправить</button>
+                <button class="btn btn-blue" onclick="sendFromSummary('share')" style="margin-bottom:8px;">Отправить</button>
+                <button class="btn btn-blue" onclick="copyOrderText()" style="background:#666;">Копировать текст заказа</button>
             </div>
         </div>
 
@@ -225,10 +226,6 @@
                 <div class="input-wrap">
                     <label>Ваш Телефон</label>
                     <input type="tel" id="u-phone" placeholder="+7-___-___-__-__">
-                </div>
-                <div class="input-wrap">
-                    <label>Почта для отправки заказов</label>
-                    <input type="email" id="u-email" placeholder="example@mail.ru">
                 </div>
                 <button class="btn btn-blue" onclick="saveProfile()">СОХРАНИТЬ МАСТЕРА</button>
             </div>
@@ -637,6 +634,15 @@ async function showSummary() {
 function closeSummary() {
     document.getElementById('screen-summary').classList.add('hidden');
     document.getElementById('screen-order-edit').classList.remove('hidden');
+}
+
+function copyOrderText() {
+    const text = document.getElementById('summary-content').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        showToast("Скопировано");
+    }).catch(() => {
+        showToast("Не удалось скопировать");
+    });
 }
 
 async function sendFromSummary(method) {
