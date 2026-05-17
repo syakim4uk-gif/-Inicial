@@ -1,5 +1,5 @@
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open('initial-v4.8').then((cache) => cache.addAll(['index.html', 'manifest.json'])));
+  e.waitUntil(caches.open('initial-v4.8.1').then((cache) => cache.addAll(['index.html', 'manifest.json'])));
 });
 self.addEventListener('fetch', (e) => {
   e.respondWith(caches.match(e.request).then((response) => response || fetch(e.request)));
